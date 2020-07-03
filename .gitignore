@@ -1,0 +1,15 @@
+# Build directories
+/classes
+/build
+/out
+
+*.iws
+*.iml
+.idea
+.gradle
+*.DS_Store
+
+.classpath
+.project
+.settings/
+*.launch
