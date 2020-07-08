@@ -64,6 +64,7 @@ public class Emitter {
         }
     }
 
+    @Nonnull
     private String classBuilder(@Nonnull ClassInfo info) {
         StringBuilder builder = new StringBuilder();
 
@@ -144,6 +145,7 @@ public class Emitter {
         return new EmittedMethod(info, builder.toString(), signature, klass);
     }
 
+    @Nullable
     private String argBuilder(StringBuilder builder, DocConverter docs, VariableElement element) {
         String name = element.getSimpleName().toString();
         TypeMirror type = element.asType();
@@ -152,7 +154,6 @@ public class Emitter {
         if (Helpers.is(type, "dan200.computercraft.api.lua.ILuaContext")
             || Helpers.is(type, "dan200.computercraft.api.peripheral.IComputerAccess")) {
             return null;
-
         }
         if (Helpers.isAny(type)) {
             env.message(Diagnostic.Kind.WARNING, "Method has a dynamic argument but has no @cc.param tag.", element);
@@ -173,7 +174,7 @@ public class Emitter {
         return name;
     }
 
-    public void emit(File output) throws IOException {
+    public void emit(@Nonnull File output) throws IOException {
         if (!output.exists() && !output.mkdirs()) throw new IOException("Cannot create output directory: " + output);
 
         for (Map.Entry<ClassInfo, String> module : typeBuilders.entrySet()) {
@@ -185,6 +186,7 @@ public class Emitter {
         }
     }
 
+    @Nullable
     private String resolve(@Nullable ClassInfo context, Element element) {
         switch (element.getKind()) {
             case CLASS: {
