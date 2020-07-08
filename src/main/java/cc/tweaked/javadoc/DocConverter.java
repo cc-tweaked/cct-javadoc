@@ -20,8 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder>
-{
+public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
     private final Element owner;
     private final Environment environment;
     private final DocTreePath path;
@@ -35,172 +34,149 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder>
     private boolean hasReturn = false;
     private List<? extends DocTree> returns;
 
-    public DocConverter( Environment environment, Element owner, Function<Element, String> resolve )
-    {
+    public DocConverter(Environment environment, Element owner, Function<Element, String> resolve) {
         this.owner = owner;
         this.environment = environment;
 
-        DocCommentTree tree = environment.trees().getDocCommentTree( owner );
-        this.path = tree == null ? null : new DocTreePath( environment.trees().getPath( owner ), tree );
+        DocCommentTree tree = environment.trees().getDocCommentTree(owner);
+        this.path = tree == null ? null : new DocTreePath(environment.trees().getPath(owner), tree);
         this.resolve = resolve;
     }
 
-    public boolean hasParam()
-    {
+    public boolean hasParam() {
         return hasParam;
     }
 
     @Nonnull
-    public Map<String, List<? extends DocTree>> getParams()
-    {
+    public Map<String, List<? extends DocTree>> getParams() {
         return params;
     }
 
-    public boolean hasReturn()
-    {
+    public boolean hasReturn() {
         return hasReturn;
     }
 
     @Nullable
-    public List<? extends DocTree> getReturns()
-    {
+    public List<? extends DocTree> getReturns() {
         return returns;
     }
 
     @Override
-    public Void visitDocComment( DocCommentTree node, StringBuilder stringBuilder )
-    {
-        visit( node.getFullBody(), stringBuilder );
-        stringBuilder.append( "\n" );
-        visit( node.getBlockTags(), stringBuilder );
+    public Void visitDocComment(DocCommentTree node, StringBuilder stringBuilder) {
+        visit(node.getFullBody(), stringBuilder);
+        stringBuilder.append("\n");
+        visit(node.getBlockTags(), stringBuilder);
         return null;
     }
 
     @Override
-    public Void visitText( TextTree node, StringBuilder stringBuilder )
-    {
-        stringBuilder.append( node.getBody() );
+    public Void visitText(TextTree node, StringBuilder stringBuilder) {
+        stringBuilder.append(node.getBody());
         return null;
     }
 
     @Override
-    public Void visitLiteral( LiteralTree node, StringBuilder stringBuilder )
-    {
+    public Void visitLiteral(LiteralTree node, StringBuilder stringBuilder) {
         String body = node.getBody().getBody();
 
-        if( inPre )
-        {
+        if (inPre) {
             // This is a terrible hack, but one which (sadly) works. We skip emitting backticks if we're within a pre
             // block, as this will have inserted backticks already.
-            stringBuilder.append( body );
+            stringBuilder.append(body);
             return null;
         }
 
-        switch( body )
-        {
+        switch (body) {
             case "nil":
             case "true":
             case "false":
-                stringBuilder.append( "@{" ).append( body ).append( "}" );
+                stringBuilder.append("@{").append(body).append("}");
                 return null;
             default:
-                stringBuilder.append( "`" ).append( body ).append( "`" );
+                stringBuilder.append("`").append(body).append("`");
                 return null;
         }
     }
 
     @Override
-    public Void visitLink( LinkTree node, StringBuilder stringBuilder )
-    {
-        stringBuilder.append( "@{" );
-        visit( node.getReference(), stringBuilder );
-        if( !node.getLabel().isEmpty() )
-        {
-            stringBuilder.append( "|" );
-            visit( node.getLabel(), stringBuilder );
+    public Void visitLink(LinkTree node, StringBuilder stringBuilder) {
+        stringBuilder.append("@{");
+        visit(node.getReference(), stringBuilder);
+        if (!node.getLabel().isEmpty()) {
+            stringBuilder.append("|");
+            visit(node.getLabel(), stringBuilder);
         }
-        stringBuilder.append( "}" );
+        stringBuilder.append("}");
         return null;
     }
 
     @Override
-    public Void visitReference( ReferenceTree node, StringBuilder stringBuilder )
-    {
-        Element referred = environment.trees().getElement( DocTreePath.getPath( path, node ) );
+    public Void visitReference(ReferenceTree node, StringBuilder stringBuilder) {
+        Element referred = environment.trees().getElement(DocTreePath.getPath(path, node));
         String name = node.getSignature();
-        if( referred == null )
-        {
-            environment.message( Diagnostic.Kind.ERROR, "Cannot resolve reference.", owner, node );
-            stringBuilder.append( node.getSignature() );
+        if (referred == null) {
+            environment.message(Diagnostic.Kind.ERROR, "Cannot resolve reference.", owner, node);
+            stringBuilder.append(node.getSignature());
             return null;
         }
 
-        String alternative = resolve.apply( referred );
-        if( alternative == null )
-        {
-            environment.message( Diagnostic.Kind.ERROR, "Cannot convert " + referred + " into a Lua reference.", owner, node );
-            stringBuilder.append( node.getSignature() );
+        String alternative = resolve.apply(referred);
+        if (alternative == null) {
+            environment.message(Diagnostic.Kind.ERROR, "Cannot convert " + referred + " into a Lua reference.", owner, node);
+            stringBuilder.append(node.getSignature());
             return null;
         }
 
-        stringBuilder.append( alternative );
+        stringBuilder.append(alternative);
         return null;
     }
 
     @Override
-    public Void visitHidden( HiddenTree node, StringBuilder stringBuilder )
-    {
-        stringBuilder.append( "@local\n" );
+    public Void visitHidden(HiddenTree node, StringBuilder stringBuilder) {
+        stringBuilder.append("@local\n");
         return null;
     }
 
     @Override
-    public Void visitParam( ParamTree node, StringBuilder stringBuilder )
-    {
-        params.put( node.getName().getName().toString(), node.getDescription() );
+    public Void visitParam(ParamTree node, StringBuilder stringBuilder) {
+        params.put(node.getName().getName().toString(), node.getDescription());
         return null;
     }
 
     @Override
-    public Void visitReturn( ReturnTree node, StringBuilder stringBuilder )
-    {
+    public Void visitReturn(ReturnTree node, StringBuilder stringBuilder) {
         returns = node.getDescription();
         return null;
     }
 
     @Override
-    public Void visitThrows( ThrowsTree node, StringBuilder stringBuilder )
-    {
+    public Void visitThrows(ThrowsTree node, StringBuilder stringBuilder) {
         List<? extends DocTree> desc = node.getDescription();
-        if( !desc.isEmpty() && desc.get( 0 ).getKind() == DocTree.Kind.TEXT && ((TextTree) desc.get( 0 )).getBody().startsWith( "(hidden)" ) )
-        {
+        if (!desc.isEmpty() && desc.get(0).getKind() == DocTree.Kind.TEXT && ((TextTree) desc.get(0)).getBody().startsWith("(hidden)")) {
             return null;
         }
 
-        stringBuilder.append( "@throws " );
-        visit( desc, stringBuilder );
-        stringBuilder.append( "\n" );
+        stringBuilder.append("@throws ");
+        visit(desc, stringBuilder);
+        stringBuilder.append("\n");
         return null;
     }
 
     @Override
-    public Void visitDeprecated( DeprecatedTree node, StringBuilder stringBuilder )
-    {
-        stringBuilder.append( "@deprecated " );
-        visit( node.getBody(), stringBuilder );
-        stringBuilder.append( "\n" );
+    public Void visitDeprecated(DeprecatedTree node, StringBuilder stringBuilder) {
+        stringBuilder.append("@deprecated ");
+        visit(node.getBody(), stringBuilder);
+        stringBuilder.append("\n");
         return null;
     }
 
     @Override
-    public Void visitUnknownBlockTag( UnknownBlockTagTree node, StringBuilder stringBuilder )
-    {
+    public Void visitUnknownBlockTag(UnknownBlockTagTree node, StringBuilder stringBuilder) {
         String name = node.getTagName();
-        if( !name.startsWith( "cc." ) ) return super.visitUnknownBlockTag( node, stringBuilder );
+        if (!name.startsWith("cc.")) return super.visitUnknownBlockTag(node, stringBuilder);
 
-        String actualName = name.substring( 3 );
-        switch( actualName )
-        {
+        String actualName = name.substring(3);
+        switch (actualName) {
             case "param":
             case "tparam":
                 hasParam = true;
@@ -213,74 +189,66 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder>
                 return null;
         }
 
-        stringBuilder.append( "@" ).append( actualName );
+        stringBuilder.append("@").append(actualName);
 
         List<? extends DocTree> children = node.getContent();
-        if( children.isEmpty() || children.get( 0 ).getKind() != DocTree.Kind.TEXT || !((TextTree) children.get( 0 )).getBody().startsWith( "[" ) )
-        {
-            stringBuilder.append( " " );
+        if (children.isEmpty() || children.get(0).getKind() != DocTree.Kind.TEXT || !((TextTree) children.get(0)).getBody().startsWith("[")) {
+            stringBuilder.append(" ");
         }
 
-        visit( children, stringBuilder );
-        stringBuilder.append( "\n" );
+        visit(children, stringBuilder);
+        stringBuilder.append("\n");
         return null;
     }
 
     @Override
-    public Void visitSee( SeeTree node, StringBuilder stringBuilder )
-    {
+    public Void visitSee(SeeTree node, StringBuilder stringBuilder) {
         List<? extends DocTree> ref = node.getReference();
-        if( ref.isEmpty() ) return null;
+        if (ref.isEmpty()) return null;
 
-        stringBuilder.append( "@see " );
-        visit( ref.get( 0 ), stringBuilder );
-        stringBuilder.append( " " );
-        visit( ref.subList( 1, ref.size() ), stringBuilder );
-        stringBuilder.append( "\n" );
+        stringBuilder.append("@see ");
+        visit(ref.get(0), stringBuilder);
+        stringBuilder.append(" ");
+        visit(ref.subList(1, ref.size()), stringBuilder);
+        stringBuilder.append("\n");
         return null;
     }
 
     @Override
-    public Void visitStartElement( StartElementTree node, StringBuilder stringBuilder )
-    {
-        if( node.getName().contentEquals( "pre" ) )
-        {
+    public Void visitStartElement(StartElementTree node, StringBuilder stringBuilder) {
+        if (node.getName().contentEquals("pre")) {
             inPre = true;
-            stringBuilder.append( "```lua" );
+            stringBuilder.append("```lua");
             return null;
         }
 
-        stringBuilder.append( "<" ).append( node.getName() ).append( node.isSelfClosing() ? " />" : ">" );
+        stringBuilder.append("<").append(node.getName()).append(node.isSelfClosing() ? " />" : ">");
         return null;
     }
 
     @Override
-    public Void visitEndElement( EndElementTree node, StringBuilder stringBuilder )
-    {
-        if( node.getName().contentEquals( "pre" ) )
-        {
+    public Void visitEndElement(EndElementTree node, StringBuilder stringBuilder) {
+        if (node.getName().contentEquals("pre")) {
             inPre = false;
-            stringBuilder.append( "```" );
+            stringBuilder.append("```");
             return null;
         }
 
-        stringBuilder.append( "</" ).append( node.getName() ).append( ">" );
+        stringBuilder.append("</").append(node.getName()).append(">");
         return null;
     }
 
     @Override
-    protected Void defaultAction( DocTree node, StringBuilder stringBuilder )
-    {
-        report( node, "Visiting unknown node " + node.getKind() );
+    protected Void defaultAction(DocTree node, StringBuilder stringBuilder) {
+        report(node, "Visiting unknown node " + node.getKind());
         return null;
     }
 
-    protected void report( DocTree node, String message )
-    {
+    protected void report(DocTree node, String message) {
         DocTrees trees = environment.trees();
         environment.trees().printMessage(
             Diagnostic.Kind.ERROR, message, node,
-            trees.getDocCommentTree( owner ), trees.getPath( owner ).getCompilationUnit()
+            trees.getDocCommentTree(owner), trees.getPath(owner).getCompilationUnit()
         );
     }
 }

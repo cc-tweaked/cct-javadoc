@@ -22,15 +22,13 @@ import java.util.stream.Collectors;
 /**
  * Information about a method annotated with {@code @LuaFunction}.
  */
-public class MethodInfo
-{
+public class MethodInfo {
     private final List<String> allNames;
     private final ExecutableElement method;
     private final DocCommentTree doc;
 
-    public MethodInfo( @Nonnull List<String> allNames, @Nonnull ExecutableElement method, @Nullable DocCommentTree doc )
-    {
-        this.allNames = Collections.unmodifiableList( allNames );
+    public MethodInfo(@Nonnull List<String> allNames, @Nonnull ExecutableElement method, @Nullable DocCommentTree doc) {
+        this.allNames = Collections.unmodifiableList(allNames);
         this.method = method;
         this.doc = doc;
     }
@@ -43,46 +41,41 @@ public class MethodInfo
      * @return Information about this method, if available.
      */
     @Nonnull
-    public static Optional<MethodInfo> of( @Nonnull Environment env, @Nonnull ExecutableElement method )
-    {
+    public static Optional<MethodInfo> of(@Nonnull Environment env, @Nonnull ExecutableElement method) {
         // Only allow instance methods. Static methods are "generic peripheral" ones, and so are unsuitable.
-        if( method.getModifiers().contains( Modifier.STATIC ) ) return Optional.empty();
+        if (method.getModifiers().contains(Modifier.STATIC)) return Optional.empty();
 
-        AnnotationMirror mirror = Helpers.getAnnotation( method, env.getLuaFunction() );
-        if( mirror == null ) return Optional.empty();
+        AnnotationMirror mirror = Helpers.getAnnotation(method, env.getLuaFunction());
+        if (mirror == null) return Optional.empty();
 
-        @SuppressWarnings( { "unchecked", "rawtypes" } )
-        List<AnnotationValue> overrideNames = (List) Helpers.getAnnotationValue( mirror, "value" );
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        List<AnnotationValue> overrideNames = (List) Helpers.getAnnotationValue(mirror, "value");
 
-        return Optional.of( new MethodInfo(
+        return Optional.of(new MethodInfo(
             overrideNames == null
-                ? List.of( method.getSimpleName().toString() )
-                : overrideNames.stream().map( x -> (String) x.getValue() ).collect( Collectors.toList() ),
-            method, env.trees().getDocCommentTree( method )
-        ) );
+                ? List.of(method.getSimpleName().toString())
+                : overrideNames.stream().map(x -> (String) x.getValue()).collect(Collectors.toList()),
+            method, env.trees().getDocCommentTree(method)
+        ));
     }
 
     @Nonnull
-    public String name()
-    {
-        return allNames.get( 0 );
+    public String name() {
+        return allNames.get(0);
     }
 
     @Nonnull
-    public List<String> otherNames()
-    {
-        return allNames.subList( 1, allNames.size() );
+    public List<String> otherNames() {
+        return allNames.subList(1, allNames.size());
     }
 
     @Nonnull
-    public ExecutableElement element()
-    {
+    public ExecutableElement element() {
         return method;
     }
 
     @Nullable
-    public DocCommentTree doc()
-    {
+    public DocCommentTree doc() {
         return doc;
     }
 }

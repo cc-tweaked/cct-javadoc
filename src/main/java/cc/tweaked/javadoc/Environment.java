@@ -24,8 +24,7 @@ import javax.tools.Diagnostic;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-public final class Environment
-{
+public final class Environment {
     public static final String LUA_FUNCTION = "dan200.computercraft.api.lua.LuaFunction";
     public static final String PERIPHERAL = "dan200.computercraft.api.peripheral.IPeripheral";
     public static final String LUA_API = "dan200.computercraft.api.lua.ILuaAPI";
@@ -37,35 +36,30 @@ public final class Environment
     private final TypeMirror luaApiType;
     private final TypeMirror peripheralType;
 
-    private Environment( DocletEnvironment env, Reporter reporter )
-    {
+    private Environment(DocletEnvironment env, Reporter reporter) {
         this.env = env;
         this.reporter = reporter;
 
         Elements elements = env.getElementUtils();
-        luaFunction = elements.getTypeElement( LUA_FUNCTION );
-        luaApiType = asType( elements.getTypeElement( LUA_API ) );
-        peripheralType = asType( elements.getTypeElement( PERIPHERAL ) );
+        luaFunction = elements.getTypeElement(LUA_FUNCTION);
+        luaApiType = asType(elements.getTypeElement(LUA_API));
+        peripheralType = asType(elements.getTypeElement(PERIPHERAL));
     }
 
-    public static Environment of( DocletEnvironment environment, Reporter reporter )
-    {
-        Environment env = new Environment( environment, reporter );
-        if( env.luaFunction == null )
-        {
-            env.message( Diagnostic.Kind.ERROR, "Cannot find @LuaFunction" );
+    public static Environment of(DocletEnvironment environment, Reporter reporter) {
+        Environment env = new Environment(environment, reporter);
+        if (env.luaFunction == null) {
+            env.message(Diagnostic.Kind.ERROR, "Cannot find @LuaFunction");
             return null;
         }
 
-        if( env.luaApiType == null )
-        {
-            env.message( Diagnostic.Kind.ERROR, "Cannot find IAPI" );
+        if (env.luaApiType == null) {
+            env.message(Diagnostic.Kind.ERROR, "Cannot find IAPI");
             return null;
         }
 
-        if( env.peripheralType == null )
-        {
-            env.message( Diagnostic.Kind.ERROR, "Cannot find IPeripheral" );
+        if (env.peripheralType == null) {
+            env.message(Diagnostic.Kind.ERROR, "Cannot find IPeripheral");
             return null;
         }
 
@@ -73,86 +67,69 @@ public final class Environment
     }
 
     @Nonnull
-    public Elements elements()
-    {
+    public Elements elements() {
         return env.getElementUtils();
     }
 
     @Nonnull
-    public Types types()
-    {
+    public Types types() {
         return env.getTypeUtils();
     }
 
     @Nonnull
-    public DocTrees trees()
-    {
+    public DocTrees trees() {
         return env.getDocTrees();
     }
 
-    public Reporter reporter()
-    {
+    public Reporter reporter() {
         return reporter;
     }
 
-    public void message( @Nonnull Diagnostic.Kind kind, @Nonnull String message )
-    {
-        reporter.print( kind, message );
+    public void message(@Nonnull Diagnostic.Kind kind, @Nonnull String message) {
+        reporter.print(kind, message);
     }
 
-    public void message( @Nonnull Diagnostic.Kind kind, @Nonnull String message, @Nonnull Element element )
-    {
-        reporter.print( kind, element, message );
+    public void message(@Nonnull Diagnostic.Kind kind, @Nonnull String message, @Nonnull Element element) {
+        reporter.print(kind, element, message);
     }
 
-    public void message( @Nonnull Diagnostic.Kind kind, @Nonnull String message, @Nonnull Element element, @NonNull DocTree tree )
-    {
-        reporter.print( kind, DocTreePath.getPath( trees().getPath( element ), trees().getDocCommentTree( element ), tree ), message );
+    public void message(@Nonnull Diagnostic.Kind kind, @Nonnull String message, @Nonnull Element element, @NonNull DocTree tree) {
+        reporter.print(kind, DocTreePath.getPath(trees().getPath(element), trees().getDocCommentTree(element), tree), message);
     }
 
     @Nonnull
-    public TypeElement getLuaFunction()
-    {
+    public TypeElement getLuaFunction() {
         return luaFunction;
     }
 
     @Nonnull
-    public TypeMirror getLuaApiType()
-    {
+    public TypeMirror getLuaApiType() {
         return luaApiType;
     }
 
     @Nonnull
-    public TypeMirror getPeripheralType()
-    {
+    public TypeMirror getPeripheralType() {
         return peripheralType;
     }
 
-    public void trying( @Nonnull Element element, Runnable function )
-    {
-        try
-        {
+    public void trying(@Nonnull Element element, Runnable function) {
+        try {
             function.run();
-        }
-        catch( RuntimeException e )
-        {
+        } catch (RuntimeException e) {
             StringWriter writer = new StringWriter();
-            try( PrintWriter out = new PrintWriter( writer ) )
-            {
-                e.printStackTrace( out );
+            try (PrintWriter out = new PrintWriter(writer)) {
+                e.printStackTrace(out);
             }
 
-            message( Diagnostic.Kind.ERROR, writer.toString(), element );
+            message(Diagnostic.Kind.ERROR, writer.toString(), element);
         }
     }
 
-    private static TypeMirror asType( TypeElement element )
-    {
+    private static TypeMirror asType(TypeElement element) {
         return element == null ? null : element.asType();
     }
 
-    private interface MsgReporter
-    {
-        void message( @Nonnull Diagnostic.Kind kind, @Nonnull String message, @Nullable Element element );
+    private interface MsgReporter {
+        void message(@Nonnull Diagnostic.Kind kind, @Nonnull String message, @Nullable Element element);
     }
 }
