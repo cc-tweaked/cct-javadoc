@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Map;
 
 public class Emitter {
-    private final Map<ClassInfo, StringBuilder> typeBuilders = new HashMap<>();
-    private final Map<MethodInfo, StringBuilder> methodBuilders = new HashMap<>();
+    private final Map<ClassInfo, String> typeBuilders = new HashMap<>();
+    private final Map<MethodInfo, EmittedMethod> methodBuilders = new HashMap<>();
 
     private final Environment env;
     private final Map<TypeElement, ClassInfo> types;
@@ -41,7 +41,14 @@ public class Emitter {
         this.types = types;
         this.methods = methods;
 
-        for (MethodInfo method : methods.values()) methodBuilder(method);
+        for (MethodInfo info : methods.values()) methodBuilders.put(info, methodBuilder(info));
+        for (ClassInfo type : types.values()) typeBuilders.put(type, classBuilder(type));
+        for (EmittedMethod emitted : methodBuilders.values()) {
+            if (!emitted.isUsed()) {
+                MethodInfo info = emitted.method;
+                env.message(Diagnostic.Kind.NOTE, "Cannot find owner for " + info.name(), info.element());
+            }
+        }
     }
 
     @Nullable
@@ -57,7 +64,7 @@ public class Emitter {
         }
     }
 
-    private StringBuilder classBuilder(@Nonnull ClassInfo info) {
+    private String classBuilder(@Nonnull ClassInfo info) {
         StringBuilder builder = new StringBuilder();
 
         if (info.kind() == ClassInfo.Kind.TYPE) {
@@ -80,23 +87,28 @@ public class Emitter {
                 break;
         }
 
-        return builder;
-    }
+        String prefix = info.typeName() == null ? "" : info.typeName() + ".";
+        for (EmittedMethod method : methodBuilders.values()) {
+            if (!method.appearsIn(info)) continue;
 
-    private void methodBuilder(@Nonnull MethodInfo info) {
-        ExecutableElement method = info.element();
-        ClassInfo klass = resolveType(method.getEnclosingElement());
-        if (klass == null) {
-            env.message(Diagnostic.Kind.NOTE, "Cannot find owner for " + info.name(), method);
-            return;
+            builder.append("\n");
+            method.emit(prefix, builder);
         }
 
-        StringBuilder builder = typeBuilders.computeIfAbsent(klass, this::classBuilder);
+        return builder.toString();
+    }
+
+    @Nonnull
+    private EmittedMethod methodBuilder(@Nonnull MethodInfo info) {
+        ExecutableElement method = info.element();
+        ClassInfo klass = resolveType(method.getEnclosingElement());
+
+        StringBuilder builder = new StringBuilder();
 
         DocConverter doc = new DocConverter(env, method, x -> resolve(klass, x));
         TypeConverter type = new TypeConverter(env, method);
 
-        builder.append("\n--[[- ");
+        builder.append("--[[- ");
         doc.visit(info.doc(), builder);
         builder.append("\n");
         writeSource(builder, method);
@@ -129,11 +141,7 @@ public class Emitter {
 
         builder.append("]]\n");
 
-        String prefix = klass.typeName() == null ? "" : klass.typeName() + ".";
-        builder.append("function ").append(prefix).append(info.name()).append("(").append(signature).append(") end\n");
-        for (String name : info.otherNames()) {
-            builder.append(prefix).append(name).append(" = ").append(prefix).append(info.name()).append("\n");
-        }
+        return new EmittedMethod(info, builder.toString(), signature, klass);
     }
 
     private String argBuilder(StringBuilder builder, DocConverter docs, VariableElement element) {
@@ -168,16 +176,16 @@ public class Emitter {
     public void emit(File output) throws IOException {
         if (!output.exists() && !output.mkdirs()) throw new IOException("Cannot create output directory: " + output);
 
-        for (Map.Entry<ClassInfo, StringBuilder> module : typeBuilders.entrySet()) {
+        for (Map.Entry<ClassInfo, String> module : typeBuilders.entrySet()) {
             if (module.getKey().isHidden()) continue;
 
             try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(output, module.getKey().name() + ".lua")), StandardCharsets.UTF_8))) {
-                writer.write(module.getValue().toString());
+                writer.write(module.getValue());
             }
         }
     }
 
-    public String resolve(ClassInfo context, Element element) {
+    private String resolve(@Nullable ClassInfo context, Element element) {
         switch (element.getKind()) {
             case CLASS: {
                 ClassInfo type = types.get(MoreElements.asType(element));
@@ -205,5 +213,39 @@ public class Emitter {
         Path current = Paths.get(tree.getSourceFile().getName());
         builder.append("@source ").append(root.relativize(current).toString().replace('\\', '/')).append(":")
             .append(map.getLineNumber(position)).append("\n");
+    }
+
+    private class EmittedMethod {
+        private final MethodInfo method;
+        private final String docComment;
+        private final String signature;
+        private final ClassInfo owner;
+        private boolean used = false;
+
+        EmittedMethod(MethodInfo method, String docComment, String signature, ClassInfo owner) {
+            this.method = method;
+            this.docComment = docComment;
+            this.signature = signature;
+            this.owner = owner;
+        }
+
+        boolean isUsed() {
+            return used;
+        }
+
+        void emit(String prefix, StringBuilder builder) {
+            used = true;
+
+            builder.append(docComment);
+            builder.append("function ").append(prefix).append(method.name()).append("(").append(signature).append(") end\n");
+            for (String name : method.otherNames()) {
+                builder.append(prefix).append(name).append(" = ").append(prefix).append(method.name()).append("\n");
+            }
+        }
+
+        boolean appearsIn(@Nonnull ClassInfo klass) {
+            return klass == owner
+                || env.types().isAssignable(klass.element().asType(), method.element().getEnclosingElement().asType());
+        }
     }
 }

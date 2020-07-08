@@ -113,7 +113,6 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
     @Override
     public Void visitReference(ReferenceTree node, StringBuilder stringBuilder) {
         Element referred = environment.trees().getElement(DocTreePath.getPath(path, node));
-        String name = node.getSignature();
         if (referred == null) {
             environment.message(Diagnostic.Kind.ERROR, "Cannot resolve reference.", owner, node);
             stringBuilder.append(node.getSignature());
