@@ -64,8 +64,24 @@ public final class Helpers {
     public static boolean isAny(TypeMirror type) {
         return is(type, "dan200.computercraft.api.lua.MethodResult")
             || is(type, "dan200.computercraft.api.lua.IArguments")
-            || is(type, Object.class)
             || (type.getKind() == TypeKind.ARRAY && is(((ArrayType) type).getComponentType(), Object.class));
+    }
+
+    public static boolean isKnown(TypeMirror type) {
+        TypeMirror t = unwrapOptional(type);
+        if(t == null) t = type;
+
+        switch (t.getKind()) {
+            case DOUBLE:
+            case INT:
+            case LONG:
+            case BOOLEAN:
+                return true;
+            case DECLARED:
+                return is(t, String.class);
+            default:
+                return false;
+        }
     }
 
     public static boolean isIrrelevant(TypeMirror type) {

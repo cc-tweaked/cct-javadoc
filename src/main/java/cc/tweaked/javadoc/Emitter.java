@@ -142,7 +142,7 @@ public class Emitter {
         } else {
             boolean hasAny = method.getParameters().stream()
                 .map(Element::asType)
-                .anyMatch(x -> !Helpers.isIrrelevant(x) && Helpers.isAny(x));
+                .anyMatch(x -> !Helpers.isIrrelevant(x) && !Helpers.isKnown(x));
 
             if (!hasAny) {
                 env.message(Diagnostic.Kind.WARNING, "Method uses @cc.tparam, but has no arbitrary arguments.", method);
@@ -150,11 +150,10 @@ public class Emitter {
             signature = "";
         }
 
-        boolean needsAny = Helpers.isAny(method.getReturnType());
         boolean hasAny = doc.hasReturn();
-        if (needsAny && !hasAny) {
+        if (!hasAny && Helpers.isAny(method.getReturnType())) {
             env.message(Diagnostic.Kind.WARNING, "Method returns an arbitrary object but has no @cc.return tag.", method);
-        } else if (hasAny && !needsAny) {
+        } else if (hasAny && Helpers.isKnown(method.getReturnType())) {
             env.message(Diagnostic.Kind.WARNING, "Method has a @cc.return but returns a known type.", method);
         }
 
