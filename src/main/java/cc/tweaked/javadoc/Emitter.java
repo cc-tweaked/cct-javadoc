@@ -7,7 +7,6 @@
 package cc.tweaked.javadoc;
 
 import com.google.auto.common.MoreElements;
-import com.sun.source.doctree.DocTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocTrees;
@@ -141,15 +140,26 @@ public class Emitter {
             }
             signature = String.join(", ", parameters);
         } else {
+            boolean hasAny = method.getParameters().stream()
+                .map(Element::asType)
+                .anyMatch(x -> !Helpers.isIrrelevant(x) && Helpers.isAny(x));
+
+            if (!hasAny) {
+                env.message(Diagnostic.Kind.WARNING, "Method uses @cc.tparam, but has no arbitrary arguments.", method);
+            }
             signature = "";
+        }
+
+        boolean needsAny = Helpers.isAny(method.getReturnType());
+        boolean hasAny = doc.hasReturn();
+        if (needsAny && !hasAny) {
+            env.message(Diagnostic.Kind.WARNING, "Method returns an arbitrary object but has no @cc.return tag.", method);
+        } else if (hasAny && !needsAny) {
+            env.message(Diagnostic.Kind.WARNING, "Method has a @cc.return but returns a known type.", method);
         }
 
         // If we've no explicit @cc.return annotation, then extract it from the @return tag.
         if (!doc.hasReturn() && method.getReturnType().getKind() != TypeKind.VOID) {
-            if (Helpers.isAny(method.getReturnType())) {
-                env.message(Diagnostic.Kind.WARNING, "Method returns an arbitrary object but has no @cc.return tag.", method);
-            }
-
             builder.append("@treturn ");
             type.visit(method.getReturnType(), builder);
             if (method.getAnnotation(Nullable.class) != null) builder.append("|nil");
@@ -165,17 +175,22 @@ public class Emitter {
 
     @Nullable
     private String argBuilder(StringBuilder builder, DocConverter docs, VariableElement element) {
-        String name = element.getSimpleName().toString();
         TypeMirror type = element.asType();
-        List<? extends DocTree> commentList = docs.getParams().get(name);
+        if (Helpers.isIrrelevant(type)) return null;
 
-        if (Helpers.is(type, "dan200.computercraft.api.lua.ILuaContext")
-            || Helpers.is(type, "dan200.computercraft.api.peripheral.IComputerAccess")) {
-            return null;
-        }
         if (Helpers.isAny(type)) {
             env.message(Diagnostic.Kind.WARNING, "Method has a dynamic argument but has no @cc.param tag.", element);
             return "...";
+        }
+
+        String name = element.getSimpleName().toString();
+        String prettyName;
+        if (name.endsWith("A")) {
+            prettyName = name.substring(0, name.length() - 1);
+        } else if (name.endsWith("Arg")) {
+            prettyName = name.substring(0, name.length() - 3);
+        } else {
+            prettyName = name;
         }
 
         TypeMirror optional = Helpers.unwrapOptional(type);
@@ -185,8 +200,8 @@ public class Emitter {
         builder.append(" ");
 
         new TypeConverter(env, element).visit(optional == null ? type : optional, builder);
-        builder.append(" ").append(name).append(" ");
-        docs.visit(commentList, builder);
+        builder.append(" ").append(prettyName).append(" ");
+        docs.visit(docs.getParams().get(name), builder);
         builder.append("\n");
 
         return name;

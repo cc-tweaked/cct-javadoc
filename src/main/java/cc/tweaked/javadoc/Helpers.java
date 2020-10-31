@@ -64,6 +64,12 @@ public final class Helpers {
     public static boolean isAny(TypeMirror type) {
         return is(type, "dan200.computercraft.api.lua.MethodResult")
             || is(type, "dan200.computercraft.api.lua.IArguments")
+            || is(type, Object.class)
             || (type.getKind() == TypeKind.ARRAY && is(((ArrayType) type).getComponentType(), Object.class));
+    }
+
+    public static boolean isIrrelevant(TypeMirror type) {
+        return is(type, "dan200.computercraft.api.lua.ILuaContext")
+            || is(type, "dan200.computercraft.api.peripheral.IComputerAccess");
     }
 }
