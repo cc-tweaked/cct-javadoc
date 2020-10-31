@@ -17,19 +17,18 @@ import javax.annotation.Nullable;
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Emitter {
     private final Map<ClassInfo, String> typeBuilders = new HashMap<>();
-    private final Map<MethodInfo, EmittedMethod> methodBuilders = new HashMap<>();
+    private final List<MethodCollection> methodBuilders;
 
     private final Environment env;
     private final Map<TypeElement, ClassInfo> types;
@@ -41,14 +40,38 @@ public class Emitter {
         this.types = types;
         this.methods = methods;
 
-        for (MethodInfo info : methods.values()) methodBuilders.put(info, methodBuilder(info));
-        for (ClassInfo type : types.values()) typeBuilders.put(type, classBuilder(type));
-        for (EmittedMethod emitted : methodBuilders.values()) {
-            if (!emitted.isUsed()) {
-                MethodInfo info = emitted.method;
-                env.message(Diagnostic.Kind.NOTE, "Cannot find owner for " + info.name(), info.element());
-            }
+        Map<Element, List<MethodInfo>> methodsGroups = new HashMap<>();
+        for (MethodInfo method : methods.values()) {
+            methodsGroups
+                .computeIfAbsent(method.element().getEnclosingElement(), k -> new ArrayList<>())
+                .add(method);
         }
+        methodBuilders = methodsGroups.entrySet().stream()
+            .map(pair -> {
+                ClassInfo klass = resolveType(pair.getKey());
+                // Methods are sorted by their position within the file.
+                List<EmittedMethod> emitted = pair.getValue().stream()
+                    .map(method -> methodBuilder(klass, method))
+                    .sorted(Comparator.comparing(x -> getPosition(x.method.element())))
+                    .collect(Collectors.toList());
+                return new MethodCollection(klass, pair.getKey(), emitted);
+            })
+            .sorted((x, y) -> {
+                // Classes are sorted by depth in the type hierarchy.
+                Types tys = env.types();
+                if (tys.isAssignable(x.type, y.type)) return -1;
+                if (tys.isAssignable(y.type, x.type)) return 1;
+
+                return x.enclosing.getSimpleName().toString().compareTo(y.enclosing.getSimpleName().toString());
+            })
+            .collect(Collectors.toList());
+
+        for (ClassInfo type : types.values()) typeBuilders.put(type, classBuilder(type));
+
+        methodBuilders.stream().flatMap(x -> x.methods.stream()).filter(x -> !x.isUsed()).forEach(e -> {
+            MethodInfo info = e.method;
+            env.message(Diagnostic.Kind.NOTE, "Cannot find owner for " + info.name(), info.element());
+        });
     }
 
     @Nullable
@@ -89,21 +112,16 @@ public class Emitter {
         }
 
         String prefix = info.typeName() == null ? "" : info.typeName() + ".";
-        for (EmittedMethod method : methodBuilders.values()) {
-            if (!method.appearsIn(info)) continue;
-
-            builder.append("\n");
-            method.emit(prefix, builder);
+        for (MethodCollection collection : methodBuilders) {
+            if (collection.appearsIn(info)) collection.emit(prefix, builder);
         }
 
         return builder.toString();
     }
 
     @Nonnull
-    private EmittedMethod methodBuilder(@Nonnull MethodInfo info) {
+    private EmittedMethod methodBuilder(@Nullable ClassInfo klass, @Nonnull MethodInfo info) {
         ExecutableElement method = info.element();
-        ClassInfo klass = resolveType(method.getEnclosingElement());
-
         StringBuilder builder = new StringBuilder();
 
         DocConverter doc = new DocConverter(env, method, x -> resolve(klass, x));
@@ -142,7 +160,7 @@ public class Emitter {
 
         builder.append("]]\n");
 
-        return new EmittedMethod(info, builder.toString(), signature, klass);
+        return new EmittedMethod(info, builder.toString(), signature);
     }
 
     @Nullable
@@ -206,29 +224,32 @@ public class Emitter {
         }
     }
 
-    private void writeSource(StringBuilder builder, Element element) {
+    private long getPosition(Element element) {
         DocTrees trees = env.trees();
         CompilationUnitTree tree = trees.getPath(element).getCompilationUnit();
+        return trees.getSourcePositions().getStartPosition(tree, trees.getTree(element));
+    }
+
+    private void writeSource(StringBuilder builder, Element element) {
+        CompilationUnitTree tree = env.trees().getPath(element).getCompilationUnit();
         LineMap map = tree.getLineMap();
-        long position = trees.getSourcePositions().getStartPosition(tree, trees.getTree(element));
+        long position = getPosition(element);
 
         Path current = Paths.get(tree.getSourceFile().getName());
         builder.append("@source ").append(root.relativize(current).toString().replace('\\', '/')).append(":")
             .append(map.getLineNumber(position)).append("\n");
     }
 
-    private class EmittedMethod {
+    private static class EmittedMethod {
         private final MethodInfo method;
         private final String docComment;
         private final String signature;
-        private final ClassInfo owner;
         private boolean used = false;
 
-        EmittedMethod(MethodInfo method, String docComment, String signature, ClassInfo owner) {
+        EmittedMethod(MethodInfo method, String docComment, String signature) {
             this.method = method;
             this.docComment = docComment;
             this.signature = signature;
-            this.owner = owner;
         }
 
         boolean isUsed() {
@@ -244,10 +265,30 @@ public class Emitter {
                 builder.append(prefix).append(name).append(" = ").append(prefix).append(method.name()).append("\n");
             }
         }
+    }
+
+    private final class MethodCollection {
+        private final ClassInfo info;
+        private final Element enclosing;
+        private final TypeMirror type;
+        private final List<EmittedMethod> methods;
+
+        private MethodCollection(ClassInfo info, Element enclosing, List<EmittedMethod> methods) {
+            this.info = info;
+            this.enclosing = enclosing;
+            this.type = enclosing.asType();
+            this.methods = methods;
+        }
 
         boolean appearsIn(@Nonnull ClassInfo klass) {
-            return klass == owner
-                || env.types().isAssignable(klass.element().asType(), method.element().getEnclosingElement().asType());
+            return info == klass || env.types().isAssignable(klass.element().asType(), type);
+        }
+
+        void emit(String prefix, StringBuilder builder) {
+            for (EmittedMethod method : methods) {
+                builder.append("\n");
+                method.emit(prefix, builder);
+            }
         }
     }
 }
