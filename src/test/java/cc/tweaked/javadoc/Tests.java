@@ -19,6 +19,7 @@ public class Tests {
     @ParameterizedTest
     @ValueSource(strings = {
         "basic",
+        "generic_peripheral",
     })
     public void checkEqual(String name) throws IOException {
         String fullName = name + ".lua";

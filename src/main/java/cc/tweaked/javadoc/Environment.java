@@ -28,6 +28,7 @@ public final class Environment {
     public static final String LUA_FUNCTION = "dan200.computercraft.api.lua.LuaFunction";
     public static final String PERIPHERAL = "dan200.computercraft.api.peripheral.IPeripheral";
     public static final String LUA_API = "dan200.computercraft.api.lua.ILuaAPI";
+    public static final String GENERIC_PERIPHERAL = "dan200.computercraft.core.asm.GenericSource";
 
     private final DocletEnvironment env;
     private final Reporter reporter;
@@ -35,6 +36,7 @@ public final class Environment {
     private final TypeElement luaFunction;
     private final TypeMirror luaApiType;
     private final TypeMirror peripheralType;
+    private final TypeMirror genericPeripheralType;
 
     private Environment(DocletEnvironment env, Reporter reporter) {
         this.env = env;
@@ -44,6 +46,7 @@ public final class Environment {
         luaFunction = elements.getTypeElement(LUA_FUNCTION);
         luaApiType = asType(elements.getTypeElement(LUA_API));
         peripheralType = asType(elements.getTypeElement(PERIPHERAL));
+        genericPeripheralType = asType(elements.getTypeElement(GENERIC_PERIPHERAL));
     }
 
     public static Environment of(DocletEnvironment environment, Reporter reporter) {
@@ -110,6 +113,11 @@ public final class Environment {
     @Nonnull
     public TypeMirror getPeripheralType() {
         return peripheralType;
+    }
+
+    @Nonnull
+    public TypeMirror getGenericPeripheralType() {
+        return genericPeripheralType;
     }
 
     public void trying(@Nonnull Element element, Runnable function) {

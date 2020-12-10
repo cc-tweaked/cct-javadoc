@@ -71,6 +71,7 @@ public class ClassInfo {
         Kind kind
             = env.types().isAssignable(type.asType(), env.getLuaApiType()) ? Kind.API
             : env.types().isAssignable(type.asType(), env.getPeripheralType()) ? Kind.PERIPHERAL
+            : env.types().isAssignable(type.asType(), env.getGenericPeripheralType()) ? Kind.GENERIC
             : Kind.TYPE;
 
         return Optional.of(new ClassInfo(name, kind, type, doc, hidden));
@@ -88,7 +89,8 @@ public class ClassInfo {
     public enum Kind {
         API,
         PERIPHERAL,
-        TYPE
+        TYPE,
+        GENERIC,
     }
 
     @Nonnull

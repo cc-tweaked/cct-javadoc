@@ -101,6 +101,9 @@ public class Emitter {
             case PERIPHERAL:
                 builder.append("@module[kind=peripheral] ").append(info.name()).append("\n]]\n");
                 break;
+            case GENERIC:
+                builder.append("@module[kind=generic_peripheral] ").append(info.name()).append("\n]]\n");
+                break;
             case API:
                 builder.append("@module[module] ").append(info.name()).append("\n]]\n");
                 break;
@@ -108,6 +111,8 @@ public class Emitter {
                 builder.append("@type ").append(info.typeName()).append("\n]]\n");
                 builder.append("local ").append(info.typeName()).append(" = {}\n");
                 break;
+            default:
+                throw new IllegalStateException("Unknown kind " + info.kind());
         }
 
         String prefix = info.typeName() == null ? "" : info.typeName() + ".";
@@ -121,11 +126,21 @@ public class Emitter {
     @Nonnull
     private EmittedMethod methodBuilder(@Nullable ClassInfo klass, @Nonnull MethodInfo info) {
         ExecutableElement method = info.element();
-        StringBuilder builder = new StringBuilder();
+
+        boolean isStatic = method.getModifiers().contains(Modifier.STATIC);
+        if (klass != null) {
+            boolean isGeneric = klass.kind() == ClassInfo.Kind.GENERIC;
+            if (isStatic && !isGeneric) {
+                env.message(Diagnostic.Kind.ERROR, "Cannot have static methods on non-generic sources", method);
+            } else if (isGeneric && !isStatic) {
+                env.message(Diagnostic.Kind.ERROR, "Cannot have instance methods on generic sources", method);
+            }
+        }
 
         DocConverter doc = new DocConverter(env, method, x -> resolve(klass, x));
         TypeConverter type = new TypeConverter(env, method);
 
+        StringBuilder builder = new StringBuilder();
         builder.append("--[[- ");
         doc.visit(info.doc(), builder);
         builder.append("\n");
@@ -133,8 +148,11 @@ public class Emitter {
 
         String signature;
         if (!doc.hasParam()) {
+            List<? extends VariableElement> arguments = method.getParameters();
+            if (isStatic) arguments = arguments.subList(1, arguments.size());
+
             List<String> parameters = new ArrayList<>();
-            for (VariableElement element : method.getParameters()) {
+            for (VariableElement element : arguments) {
                 String name = argBuilder(builder, doc, element);
                 if (name != null) parameters.add(name);
             }

@@ -42,9 +42,6 @@ public class MethodInfo {
      */
     @Nonnull
     public static Optional<MethodInfo> of(@Nonnull Environment env, @Nonnull ExecutableElement method) {
-        // Only allow instance methods. Static methods are "generic peripheral" ones, and so are unsuitable.
-        if (method.getModifiers().contains(Modifier.STATIC)) return Optional.empty();
-
         AnnotationMirror mirror = Helpers.getAnnotation(method, env.getLuaFunction());
         if (mirror == null) return Optional.empty();
 
