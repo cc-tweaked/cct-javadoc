@@ -1,19 +1,18 @@
 plugins {
     java
     `maven-publish`
-    maven
 }
 
 group = "cc.tweaked"
-version = "1.3.0"
+version = "1.4.0"
 
 java {
     withJavadocJar()
     withSourcesJar()
-}
 
-configure<JavaPluginConvention> {
-    sourceCompatibility = JavaVersion.VERSION_1_9
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
 }
 
 repositories {
@@ -40,27 +39,20 @@ publishing {
             from(components["java"])
         }
     }
-}
 
-// While the maven plugin/uploadArchives has been deprecated for a long time, I've not found a good way to handle scp
-// repositories (which is what mavenUploadUrl is).
-tasks.named<Upload>("uploadArchives") {
-    if (project.hasProperty("mavenUploadUrl")) {
-        repositories.withGroovyBuilder {
-            "mavenDeployer" {
-                setProperty("configuration", deployerJars)
-
-                "repository"("url" to project.property("mavenUploadUrl")) {
-                    "authentication"(
-                            "userName" to project.property("mavenUploadUser"),
-                            "privateKey" to project.property("mavenUploadKey")
-                    )
+    repositories {
+        if (project.hasProperty("mavenUser")) {
+            maven {
+                name = "SquidDev"
+                url = uri("https://squiddev.cc/maven")
+                credentials {
+                    username = project.property("mavenUser") as String
+                    password = project.property("mavenPass") as String
                 }
             }
         }
     }
 }
-tasks.getByPath("publish").dependsOn("uploadArchives")
 
 tasks.named<Test>("test") {
     useJUnitPlatform()

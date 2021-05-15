@@ -28,7 +28,7 @@ public final class Environment {
     public static final String LUA_FUNCTION = "dan200.computercraft.api.lua.LuaFunction";
     public static final String PERIPHERAL = "dan200.computercraft.api.peripheral.IPeripheral";
     public static final String LUA_API = "dan200.computercraft.api.lua.ILuaAPI";
-    public static final String GENERIC_PERIPHERAL = "dan200.computercraft.core.asm.GenericSource";
+    public static final String GENERIC_PERIPHERAL = "dan200.computercraft.api.lua.GenericSource";
 
     private final DocletEnvironment env;
     private final Reporter reporter;
