@@ -1,6 +1,7 @@
 --- @module basic
 
 --[[- A basic module
+@source src/test/java/cc/tweaked/javadoc/files/BasicModule.java:9
 @type basic
 ]]
 local basic = {}

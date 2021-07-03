@@ -97,6 +97,8 @@ public class Emitter {
         builder.append("--[[- ");
         new DocConverter(env, info.element(), x -> resolve(info, x)).visit(info.doc(), builder);
 
+        writeSource(builder, info.element());
+
         switch (info.kind()) {
             case PERIPHERAL:
                 builder.append("@module[kind=peripheral] ").append(info.name()).append("\n]]\n");
