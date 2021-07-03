@@ -1,4 +1,6 @@
 --[[- 
+@module[kind=generic_peripheral] generic_peripheral
+]]
 
 --[[- 
 @source src/test/java/cc/tweaked/javadoc/files/GenericPeripheral.java:15

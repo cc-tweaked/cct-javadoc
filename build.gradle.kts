@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "cc.tweaked"
-version = "1.4.0"
+version = "1.4.1"
 
 java {
     withJavadocJar()
@@ -29,7 +29,7 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.0")
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.7.0")
-    testImplementation("org.squiddev:cc-tweaked-1.15.2:1.94.0")
+    testImplementation("org.squiddev:cc-tweaked-1.15.2:1.97.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.0")
 }
 

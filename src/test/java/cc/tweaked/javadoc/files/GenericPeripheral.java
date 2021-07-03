@@ -3,7 +3,7 @@ package cc.tweaked.javadoc.files;
 import dan200.computercraft.api.lua.ILuaContext;
 import dan200.computercraft.api.lua.LuaFunction;
 import dan200.computercraft.api.peripheral.IComputerAccess;
-import dan200.computercraft.core.asm.GenericSource;
+import dan200.computercraft.api.lua.GenericSource;
 import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nonnull;

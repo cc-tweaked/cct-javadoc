@@ -15,10 +15,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.lang.model.element.Element;
 import javax.tools.Diagnostic;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
     private final Element owner;
@@ -82,6 +84,15 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
         if (inPre) {
             // This is a terrible hack, but one which (sadly) works. We skip emitting backticks if we're within a pre
             // block, as this will have inserted backticks already.
+            // We also attempt to normalise code blocks here by trimming leading spaces (due to the "* ") and any
+            // whitespace.
+            body = body.strip();
+            if (body.indexOf('\n') > 0) {
+                body = Arrays.stream(body.split("\n"))
+                    .map(x -> x.length() > 0 && x.charAt(0) == ' ' ? x.substring(1) : x)
+                    .collect(Collectors.joining("\n"));
+            }
+
             stringBuilder.append(body);
             return null;
         }
@@ -217,7 +228,7 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
     public Void visitStartElement(StartElementTree node, StringBuilder stringBuilder) {
         if (node.getName().contentEquals("pre")) {
             inPre = true;
-            stringBuilder.append("```lua");
+            stringBuilder.append("```lua\n");
             return null;
         }
 
@@ -229,7 +240,7 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
     public Void visitEndElement(EndElementTree node, StringBuilder stringBuilder) {
         if (node.getName().contentEquals("pre")) {
             inPre = false;
-            stringBuilder.append("```");
+            stringBuilder.append("\n```");
             return null;
         }
 
