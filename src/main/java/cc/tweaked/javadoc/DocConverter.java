@@ -73,7 +73,18 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
 
     @Override
     public Void visitText(TextTree node, StringBuilder stringBuilder) {
-        stringBuilder.append(node.getBody());
+        // Trim leading whitespace from new lines
+        String body = node.getBody();
+        if (body.indexOf('\n') < 0) {
+            stringBuilder.append(body);
+        } else {
+            String[] lines = body.split("\n");
+            for (int i = 0; i < lines.length; i++) {
+                String line = lines[i];
+                if (i > 0) stringBuilder.append("\n");
+                stringBuilder.append(i > 0 && line.startsWith(" ") ? line.substring(1) : line);
+            }
+        }
         return null;
     }
 
@@ -245,6 +256,12 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
         }
 
         stringBuilder.append("</").append(node.getName()).append(">");
+        return null;
+    }
+
+    @Override
+    public Void visitEntity(EntityTree node, StringBuilder stringBuilder) {
+        stringBuilder.append("&").append(node.getName()).append(";");
         return null;
     }
 
