@@ -85,7 +85,7 @@ public class TypeConverter extends SimpleTypeVisitor8<StringBuilder, StringBuild
             return stringBuilder.append("boolean");
         } else if (is(type, Object.class)) {
             return stringBuilder.append("any");
-        } else if (is(type, Map.class)) {
+        } else if (is(type, Map.class) || is(type, "dan200.computercraft.api.lua.LuaTable")) {
             TypeMirror key = getTypeArg(t, 0);
             TypeMirror value = getTypeArg(t, 1);
             if (key == null && value == null) return stringBuilder.append("table");
