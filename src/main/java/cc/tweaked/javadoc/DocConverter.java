@@ -115,7 +115,11 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
                 stringBuilder.append("@{").append(body).append("}");
                 return null;
             default:
-                stringBuilder.append("`").append(body).append("`");
+                if (node.getKind() == DocTree.Kind.CODE) {
+                    stringBuilder.append("`").append(body).append("`");
+                } else {
+                    stringBuilder.append(body);
+                }
                 return null;
         }
     }
