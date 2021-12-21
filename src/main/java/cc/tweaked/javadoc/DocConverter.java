@@ -15,12 +15,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.lang.model.element.Element;
 import javax.tools.Diagnostic;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
     private final Element owner;
@@ -28,7 +24,9 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
     private final DocTreePath path;
     private final Function<Element, String> resolve;
 
-    private boolean inPre = false;
+    private boolean inPre;
+    private final Deque<String> indents = new ArrayDeque<>();
+    private String indent = "";
 
     private boolean hasParam = false;
     private final Map<String, List<? extends DocTree>> params = new HashMap<>();
@@ -73,19 +71,27 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
 
     @Override
     public Void visitText(TextTree node, StringBuilder stringBuilder) {
-        // Trim leading whitespace from new lines
-        String body = node.getBody();
+        emitText(node.getBody(), stringBuilder, false);
+        return null;
+    }
+
+    private void emitText(String body, StringBuilder builder, boolean stripFirst) {
         if (body.indexOf('\n') < 0) {
-            stringBuilder.append(body);
+            builder.append(body);
         } else {
             String[] lines = body.split("\n");
             for (int i = 0; i < lines.length; i++) {
                 String line = lines[i];
-                if (i > 0) stringBuilder.append("\n");
-                stringBuilder.append(i > 0 && line.startsWith(" ") ? line.substring(1) : line);
+                if ((i > 0 || stripFirst) && line.startsWith(" ")) line = line.substring(1);
+
+                if (i > 0) {
+                    builder.append("\n");
+                    if (line.length() > 0) builder.append(indent);
+                }
+
+                builder.append(line);
             }
         }
-        return null;
     }
 
     @Override
@@ -97,14 +103,7 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
             // block, as this will have inserted backticks already.
             // We also attempt to normalise code blocks here by trimming leading spaces (due to the "* ") and any
             // whitespace.
-            body = body.strip();
-            if (body.indexOf('\n') > 0) {
-                body = Arrays.stream(body.split("\n"))
-                    .map(x -> x.length() > 0 && x.charAt(0) == ' ' ? x.substring(1) : x)
-                    .collect(Collectors.joining("\n"));
-            }
-
-            stringBuilder.append(body);
+            emitText(body.strip(), stringBuilder, true);
             return null;
         }
 
@@ -244,10 +243,15 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
         if (node.getName().contentEquals("pre")) {
             inPre = true;
             stringBuilder.append("```lua\n");
-            return null;
+        } else if (node.getName().contentEquals("ul")) {
+            // No-op
+        } else if (node.getName().contentEquals("li")) {
+            indents.push(indent);
+            indent += "   ";
+            stringBuilder.append(" - ");
+        } else {
+            stringBuilder.append("<").append(node.getName()).append(node.isSelfClosing() ? " />" : ">");
         }
-
-        stringBuilder.append("<").append(node.getName()).append(node.isSelfClosing() ? " />" : ">");
         return null;
     }
 
@@ -255,11 +259,14 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
     public Void visitEndElement(EndElementTree node, StringBuilder stringBuilder) {
         if (node.getName().contentEquals("pre")) {
             inPre = false;
-            stringBuilder.append("\n```");
-            return null;
+            stringBuilder.append(indent).append("\n```");
+        } else if (node.getName().contentEquals("ul")) {
+            // No-op
+        } else if (node.getName().contentEquals("li")) {
+            indent = indents.pop();
+        } else {
+            stringBuilder.append("</").append(node.getName()).append(">");
         }
-
-        stringBuilder.append("</").append(node.getName()).append(">");
         return null;
     }
 

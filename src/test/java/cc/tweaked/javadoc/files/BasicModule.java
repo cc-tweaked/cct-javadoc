@@ -14,6 +14,14 @@ public class BasicModule {
      * This might be useful if you need to add two numbers and want to avoid
      * depending on jQuery.
      *
+     * <ul>
+     * <li>We just want to check that we desugar lists into other lists. This ensures that one can correctly use
+     * markdown features (otherwise they're nested within HTML, which stinks).</li>
+     * <li>And
+     *
+     * another entry.</li>
+     * </ul>
+     *
      * @param x The first number to add
      * @param y The second number to add
      * @return The added values
