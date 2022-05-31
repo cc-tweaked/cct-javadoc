@@ -22,6 +22,9 @@ public class BasicModule {
      * another entry.</li>
      * </ul>
      *
+     * <customTag attribute="value"></customTag>
+     * <custom-tag attribute="value"></custom-tag>
+     *
      * @param x The first number to add
      * @param y The second number to add
      * @return The added values

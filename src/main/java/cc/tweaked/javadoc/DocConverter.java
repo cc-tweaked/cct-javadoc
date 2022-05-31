@@ -75,6 +75,12 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
         return null;
     }
 
+    @Override
+    public Void visitErroneous(ErroneousTree node, StringBuilder stringBuilder) {
+        emitText(node.getBody(), stringBuilder, false);
+        return null;
+    }
+
     private void emitText(String body, StringBuilder builder, boolean stripFirst) {
         if (body.indexOf('\n') < 0) {
             builder.append(body);
@@ -250,9 +256,30 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
             indent += "   ";
             stringBuilder.append(" - ");
         } else {
-            stringBuilder.append("<").append(node.getName()).append(node.isSelfClosing() ? " />" : ">");
+            stringBuilder.append("<").append(node.getName());
+            visit(node.getAttributes(), stringBuilder);
+            stringBuilder.append(node.isSelfClosing() ? " />" : ">");
         }
         return null;
+    }
+
+    @Override
+    public Void visitAttribute(AttributeTree node, StringBuilder stringBuilder) {
+        stringBuilder.append(' ').append(node.getName());
+        switch (node.getValueKind()) {
+            default:
+            case EMPTY:
+                return null;
+            case DOUBLE:
+                stringBuilder.append("=\"").append(node.getValue()).append('"');
+                return null;
+            case SINGLE:
+                stringBuilder.append("='").append(node.getValue()).append('\'');
+                return null;
+            case UNQUOTED:
+                stringBuilder.append('=').append(node.getValue());
+                return null;
+        }
     }
 
     @Override
