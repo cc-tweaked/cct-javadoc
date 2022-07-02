@@ -165,16 +165,16 @@ public class Emitter {
                 .anyMatch(x -> !Helpers.isIrrelevant(x) && !Helpers.isKnown(x));
 
             if (!hasAny) {
-                env.message(Diagnostic.Kind.WARNING, "Method uses @cc.tparam, but has no arbitrary arguments.", method);
+                doc.message(Diagnostic.Kind.WARNING, "Method uses @cc.tparam, but has no arbitrary arguments.", method);
             }
             signature = "";
         }
 
         boolean hasAny = doc.hasReturn();
         if (!hasAny && Helpers.isAny(method.getReturnType())) {
-            env.message(Diagnostic.Kind.WARNING, "Method returns an arbitrary object but has no @cc.return tag.", method);
+            doc.message(Diagnostic.Kind.WARNING, "Method returns an arbitrary object but has no @cc.return tag.", method);
         } else if (hasAny && Helpers.isKnown(method.getReturnType())) {
-            env.message(Diagnostic.Kind.WARNING, "Method has a @cc.return but returns a known type.", method);
+            doc.message(Diagnostic.Kind.WARNING, "Method has a @cc.return but returns a known type.", method);
         }
 
         // If we've no explicit @cc.return annotation, then extract it from the @return tag.
@@ -198,7 +198,7 @@ public class Emitter {
         if (Helpers.isIrrelevant(type)) return null;
 
         if (Helpers.isAny(type)) {
-            env.message(Diagnostic.Kind.WARNING, "Method has a dynamic argument but has no @cc.param tag.", element);
+            docs.message(Diagnostic.Kind.WARNING, "Method has a dynamic argument but has no @cc.param tag.", element);
             return "...";
         }
 

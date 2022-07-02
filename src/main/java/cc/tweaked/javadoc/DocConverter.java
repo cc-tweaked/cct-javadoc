@@ -10,6 +10,7 @@ import com.sun.source.doctree.*;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.SimpleDocTreeVisitor;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -315,5 +316,9 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
             Diagnostic.Kind.ERROR, message, node,
             trees.getDocCommentTree(owner), trees.getPath(owner).getCompilationUnit()
         );
+    }
+
+    public void message(@Nonnull Diagnostic.Kind kind, @Nonnull String message, @Nonnull Element element) {
+        if (path != null) environment.message(kind, message, element);
     }
 }
