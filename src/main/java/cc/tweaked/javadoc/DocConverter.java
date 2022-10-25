@@ -10,7 +10,6 @@ import com.sun.source.doctree.*;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.SimpleDocTreeVisitor;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -250,6 +249,8 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
         if (node.getName().contentEquals("pre")) {
             inPre = true;
             stringBuilder.append("```lua\n");
+        } else if (node.getName().contentEquals("p")) {
+            // No-op
         } else if (node.getName().contentEquals("ul")) {
             // No-op
         } else if (node.getName().contentEquals("li")) {

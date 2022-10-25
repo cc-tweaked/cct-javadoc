@@ -26,8 +26,6 @@ import java.io.StringWriter;
 
 public final class Environment {
     public static final String LUA_FUNCTION = "dan200.computercraft.api.lua.LuaFunction";
-    public static final String PERIPHERAL = "dan200.computercraft.api.peripheral.IPeripheral";
-    public static final String LUA_API = "dan200.computercraft.api.lua.ILuaAPI";
     public static final String GENERIC_PERIPHERAL = "dan200.computercraft.api.lua.GenericSource";
 
     private final DocletEnvironment env;
@@ -44,8 +42,8 @@ public final class Environment {
 
         Elements elements = env.getElementUtils();
         luaFunction = elements.getTypeElement(LUA_FUNCTION);
-        luaApiType = asType(elements.getTypeElement(LUA_API));
-        peripheralType = asType(elements.getTypeElement(PERIPHERAL));
+        luaApiType = asType(findTypeElement("dan200.computercraft.api.lua.ILuaAPI", "dan200.computercraft.api.lua.LuaAPI"));
+        peripheralType = asType(findTypeElement("dan200.computercraft.api.peripheral.IPeripheral", "dan200.computercraft.api.peripheral.Peripheral"));
         genericPeripheralType = asType(elements.getTypeElement(GENERIC_PERIPHERAL));
     }
 
@@ -131,6 +129,16 @@ public final class Environment {
 
             message(Diagnostic.Kind.ERROR, writer.toString(), element);
         }
+    }
+
+    private @Nullable TypeElement findTypeElement(String... names) {
+        Elements elements = env.getElementUtils();
+        for (String name : names) {
+            TypeElement element = elements.getTypeElement(name);
+            if (element != null) return element;
+        }
+
+        return null;
     }
 
     private static TypeMirror asType(TypeElement element) {

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "cc.tweaked"
-version = "1.4.7"
+version = "1.5.1"
 
 java {
     withJavadocJar()
@@ -17,20 +17,25 @@ java {
 
 repositories {
     mavenCentral()
-    maven("https://squiddev.cc/maven")
+    maven("https://squiddev.cc/maven") {
+        content {
+            includeGroup("org.squiddev")
+        }
+    }
 }
-
-val deployerJars by configurations.creating
 
 dependencies {
     compileOnly("com.google.code.findbugs:jsr305:3.0.2")
-    implementation("com.google.auto.service:auto-service:1.0-rc7")
-    deployerJars("org.apache.maven.wagon:wagon-ssh:3.3.1")
+    implementation("com.google.auto.service:auto-service:1.0.1")
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.0")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:5.7.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:5.9.0")
     testImplementation("org.squiddev:cc-tweaked-1.16.5:1.98.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.0")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 publishing {
@@ -41,22 +46,9 @@ publishing {
     }
 
     repositories {
-        if (project.hasProperty("mavenUser")) {
-            maven {
-                name = "SquidDev"
-                url = uri("https://squiddev.cc/maven")
-                credentials {
-                    username = project.property("mavenUser") as String
-                    password = project.property("mavenPass") as String
-                }
-            }
+        maven("https://squiddev.cc/maven") {
+            name = "SquidDev"
+            credentials(PasswordCredentials::class)
         }
-    }
-}
-
-tasks.named<Test>("test") {
-    useJUnitPlatform()
-    testLogging {
-        events("skipped", "failed")
     }
 }

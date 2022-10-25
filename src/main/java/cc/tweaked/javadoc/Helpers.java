@@ -64,12 +64,13 @@ public final class Helpers {
     public static boolean isAny(TypeMirror type) {
         return is(type, "dan200.computercraft.api.lua.MethodResult")
             || is(type, "dan200.computercraft.api.lua.IArguments")
+            || is(type, "dan200.computercraft.api.lua.Arguments")
             || (type.getKind() == TypeKind.ARRAY && is(((ArrayType) type).getComponentType(), Object.class));
     }
 
     public static boolean isKnown(TypeMirror type) {
         TypeMirror t = unwrapOptional(type);
-        if(t == null) t = type;
+        if (t == null) t = type;
 
         switch (t.getKind()) {
             case DOUBLE:
@@ -86,6 +87,8 @@ public final class Helpers {
 
     public static boolean isIrrelevant(TypeMirror type) {
         return is(type, "dan200.computercraft.api.lua.ILuaContext")
-            || is(type, "dan200.computercraft.api.peripheral.IComputerAccess");
+            || is(type, "dan200.computercraft.api.lua.LuaContext")
+            || is(type, "dan200.computercraft.api.peripheral.IComputerAccess")
+            || is(type, "dan200.computercraft.api.peripheral.ComputerAccess");
     }
 }

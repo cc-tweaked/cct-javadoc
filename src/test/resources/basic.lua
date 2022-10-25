@@ -11,6 +11,8 @@ local basic = {}
 This might be useful if you need to add two numbers and want to avoid
 depending on jQuery.
 
+One more paragraph.
+
 
  - We just want to check that we desugar lists into other lists. This ensures that one can correctly use
    markdown features (otherwise they're nested within HTML, which stinks).
@@ -29,7 +31,7 @@ print("World")
 
 <code>&amp; &#42;</code>
 
-@source src/test/java/cc/tweaked/javadoc/files/BasicModule.java:39
+@source src/test/java/cc/tweaked/javadoc/files/BasicModule.java:41
 @tparam number x The first number to add
 @tparam number y The second number to add
 @treturn number The added values

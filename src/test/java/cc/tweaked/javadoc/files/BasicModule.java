@@ -10,9 +10,11 @@ import dan200.computercraft.api.lua.LuaFunction;
 public class BasicModule {
     /**
      * Add two numbers together.
-     *
+     * <p>
      * This might be useful if you need to add two numbers and want to avoid
      * depending on jQuery.
+     *
+     * One more paragraph.
      *
      * <ul>
      * <li>We just want to check that we desugar lists into other lists. This ensures that one can correctly use
