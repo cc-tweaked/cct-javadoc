@@ -64,6 +64,6 @@ public class DocletRunner {
     }
 
     public static String read(Path file) throws IOException {
-        return new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+        return Files.readString(file);
     }
 }

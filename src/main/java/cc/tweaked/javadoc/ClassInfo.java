@@ -14,6 +14,7 @@ import com.sun.source.doctree.UnknownBlockTagTree;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,22 +22,29 @@ import java.util.Optional;
  * Information about a class.
  */
 public class ClassInfo {
+    public static final String PERIPHERAL = "peripheral";
+    public static final String GENERIC_PERIPHERAL = "generic_peripheral";
+    public static final String API = "module";
+
     private final String name;
-    private final Kind kind;
+    private final String kind;
+    private final Sort sort;
     private final TypeElement element;
     private final DocCommentTree doc;
     private final boolean hidden;
     private final String moduleName;
     private final String typeName;
+    private final String referenceName;
 
-    private ClassInfo(@Nonnull String module, @Nonnull Kind kind, @Nonnull TypeElement element, @Nonnull DocCommentTree doc, boolean hidden) {
+    private ClassInfo(@Nonnull String module, @Nonnull String kind, @Nonnull Sort sort, @Nonnull TypeElement element, @Nonnull DocCommentTree doc, boolean hidden) {
         this.name = module;
         this.kind = kind;
+        this.sort = sort;
         this.element = element;
         this.doc = doc;
         this.hidden = hidden;
 
-        if (kind != Kind.TYPE) {
+        if (sort != Sort.TYPE) {
             moduleName = name;
             typeName = null;
         } else {
@@ -44,6 +52,8 @@ public class ClassInfo {
             moduleName = index < 0 ? name : name.substring(0, index);
             typeName = index < 0 ? name : name.substring(index + 1);
         }
+
+        referenceName = kind.isEmpty() ? name : kind + "!" + name;
     }
 
     /**
@@ -68,13 +78,35 @@ public class ClassInfo {
 
         if (name == null || name.isEmpty()) return Optional.empty();
 
-        Kind kind
-            = env.types().isAssignable(type.asType(), env.getLuaApiType()) ? Kind.API
-            : env.types().isAssignable(type.asType(), env.getPeripheralType()) ? Kind.PERIPHERAL
-            : env.types().isAssignable(type.asType(), env.getGenericPeripheralType()) ? Kind.GENERIC
-            : Kind.TYPE;
+        Sort sort;
+        String kind;
+        if (env.types().isAssignable(type.asType(), env.getLuaApiType())) {
+            sort = Sort.MODULE;
+            kind = API;
+        } else if (env.types().isAssignable(type.asType(), env.getPeripheralType())) {
+            sort = Sort.MODULE;
+            kind = PERIPHERAL;
+        } else if (env.types().isAssignable(type.asType(), env.getGenericPeripheralType())) {
+            sort = Sort.MODULE;
+            kind = GENERIC_PERIPHERAL;
+        } else {
+            sort = Sort.TYPE;
 
-        return Optional.of(new ClassInfo(name, kind, type, doc, hidden));
+            if (name.startsWith("[kind=")) {
+                int end = name.indexOf(']');
+                if (end < 0) {
+                    env.message(Diagnostic.Kind.ERROR, "Invalid module name " + name + " in doc comment", type);
+                    return Optional.empty();
+                }
+
+                kind = name.substring("[kind=".length(), end);
+                name = name.substring(end + 1).stripLeading();
+            } else {
+                kind = "";
+            }
+        }
+
+        return Optional.of(new ClassInfo(name, kind, sort, type, doc, hidden));
     }
 
     private static String getName(List<? extends DocTree> tree) {
@@ -86,11 +118,9 @@ public class ClassInfo {
         return builder.toString();
     }
 
-    public enum Kind {
-        API,
-        PERIPHERAL,
+    public enum Sort {
+        MODULE,
         TYPE,
-        GENERIC,
     }
 
     @Nonnull
@@ -109,8 +139,18 @@ public class ClassInfo {
     }
 
     @Nonnull
-    public Kind kind() {
+    public String referenceName() {
+        return referenceName;
+    }
+
+    @Nonnull
+    public String kind() {
         return kind;
+    }
+
+    @Nonnull
+    public Sort sort() {
+        return sort;
     }
 
     @Nonnull

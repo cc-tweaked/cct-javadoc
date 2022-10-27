@@ -22,6 +22,8 @@ public class Tests {
         "generic_peripheral",
         "types.One",
         "types.Two",
+        "foo",
+        "bar.Type",
     })
     public void checkEqual(String name) throws IOException {
         String fullName = name + ".lua";

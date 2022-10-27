@@ -92,8 +92,10 @@ public class Emitter {
     private String classBuilder(@Nonnull ClassInfo info) {
         StringBuilder builder = new StringBuilder();
 
-        if (info.kind() == ClassInfo.Kind.TYPE) {
-            builder.append("--- @module ").append(info.moduleName()).append("\n\n");
+        if (info.sort() == ClassInfo.Sort.TYPE) {
+            builder.append("--- ");
+            appendModule(builder, info);
+            builder.append("\n\n");
         }
 
         builder.append("--[[- ");
@@ -101,15 +103,10 @@ public class Emitter {
 
         writeSource(builder, info.element());
 
-        switch (info.kind()) {
-            case PERIPHERAL:
-                builder.append("@module[kind=peripheral] ").append(info.name()).append("\n]]\n");
-                break;
-            case GENERIC:
-                builder.append("@module[kind=generic_peripheral] ").append(info.name()).append("\n]]\n");
-                break;
-            case API:
-                builder.append("@module[module] ").append(info.name()).append("\n]]\n");
+        switch (info.sort()) {
+            case MODULE:
+                appendModule(builder, info);
+                builder.append("\n]]\n");
                 break;
             case TYPE:
                 builder.append("@type ").append(info.typeName()).append("\n]]\n");
@@ -127,13 +124,22 @@ public class Emitter {
         return builder.toString();
     }
 
+    private static void appendModule(StringBuilder builder, ClassInfo info) {
+        if (info.kind().isEmpty()) {
+            builder.append("@module ");
+        } else {
+            builder.append("@module[kind=").append(info.kind()).append("] ");
+        }
+        builder.append(info.moduleName());
+    }
+
     @Nonnull
     private EmittedMethod methodBuilder(@Nullable ClassInfo klass, @Nonnull MethodInfo info) {
         ExecutableElement method = info.element();
 
         boolean isStatic = method.getModifiers().contains(Modifier.STATIC);
         if (klass != null) {
-            boolean isGeneric = klass.kind() == ClassInfo.Kind.GENERIC;
+            boolean isGeneric = klass.sort() == ClassInfo.Sort.MODULE && klass.kind().equals(ClassInfo.GENERIC_PERIPHERAL);
             if (isStatic && !isGeneric) {
                 env.message(Diagnostic.Kind.ERROR, "Cannot have static methods on non-generic sources", method);
             } else if (isGeneric && !isStatic) {
@@ -245,14 +251,14 @@ public class Emitter {
         switch (element.getKind()) {
             case CLASS: {
                 ClassInfo type = types.get(MoreElements.asType(element));
-                return type == null ? null : type.name();
+                return type == null ? null : type.referenceName();
             }
 
             case METHOD: {
                 MethodInfo method = methods.get(MoreElements.asExecutable(element));
                 ClassInfo builder = resolveType(method.element().getEnclosingElement());
                 if (builder == null) return null;
-                return builder == context ? method.name() : builder.name() + "." + method.name();
+                return builder == context ? method.name() : builder.referenceName() + "." + method.name();
             }
 
             default:
@@ -263,7 +269,7 @@ public class Emitter {
     @Nullable
     private String resolveTypeName(DeclaredType element) {
         ClassInfo type = types.get(MoreTypes.asTypeElement(element));
-        return type == null ? null : type.name();
+        return type == null ? null : type.referenceName();
     }
 
     private long getPosition(Element element) {
