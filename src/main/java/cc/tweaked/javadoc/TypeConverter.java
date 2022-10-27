@@ -18,20 +18,19 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import static cc.tweaked.javadoc.Helpers.is;
 
 public class TypeConverter extends SimpleTypeVisitor8<StringBuilder, StringBuilder> {
     private final Environment env;
     private final Element element;
+    private final Function<DeclaredType, String> resolve;
 
-    public TypeConverter(Environment env, Element element) {
+    public TypeConverter(Environment env, Element element, Function<DeclaredType, String> resolve) {
         this.env = env;
         this.element = element;
-    }
-
-    public static String of(Environment env, Element element, TypeMirror mirror) {
-        return new TypeConverter(env, element).visit(mirror, new StringBuilder()).toString();
+        this.resolve = resolve;
     }
 
     @Override
@@ -116,7 +115,8 @@ public class TypeConverter extends SimpleTypeVisitor8<StringBuilder, StringBuild
         } else if (is(type, "dan200.computercraft.api.lua.MethodResult")) {
             return stringBuilder.append("any...");
         } else {
-            return defaultAction(t, stringBuilder);
+            String resolved = resolve.apply(t);
+            return resolved != null ? stringBuilder.append(resolved) : defaultAction(t, stringBuilder);
         }
     }
 

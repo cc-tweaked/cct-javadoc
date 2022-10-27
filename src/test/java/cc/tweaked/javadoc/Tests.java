@@ -20,6 +20,8 @@ public class Tests {
     @ValueSource(strings = {
         "basic",
         "generic_peripheral",
+        "types.One",
+        "types.Two",
     })
     public void checkEqual(String name) throws IOException {
         String fullName = name + ".lua";

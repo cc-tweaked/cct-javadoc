@@ -7,6 +7,7 @@
 package cc.tweaked.javadoc;
 
 import com.google.auto.common.MoreElements;
+import com.google.auto.common.MoreTypes;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocTrees;
@@ -14,6 +15,7 @@ import com.sun.source.util.DocTrees;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.lang.model.element.*;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
@@ -95,7 +97,7 @@ public class Emitter {
         }
 
         builder.append("--[[- ");
-        new DocConverter(env, info.element(), x -> resolve(info, x)).visit(info.doc(), builder);
+        new DocConverter(env, info.element(), x -> resolveTermName(info, x)).visit(info.doc(), builder);
 
         writeSource(builder, info.element());
 
@@ -139,8 +141,8 @@ public class Emitter {
             }
         }
 
-        DocConverter doc = new DocConverter(env, method, x -> resolve(klass, x));
-        TypeConverter type = new TypeConverter(env, method);
+        DocConverter doc = new DocConverter(env, method, x -> resolveTermName(klass, x));
+        TypeConverter type = new TypeConverter(env, method, this::resolveTypeName);
 
         StringBuilder builder = new StringBuilder();
         builder.append("--[[- ");
@@ -218,7 +220,7 @@ public class Emitter {
         if (optional != null) builder.append("[opt]");
         builder.append(" ");
 
-        new TypeConverter(env, element).visit(optional == null ? type : optional, builder);
+        new TypeConverter(env, element, this::resolveTypeName).visit(optional == null ? type : optional, builder);
         builder.append(" ").append(prettyName).append(" ");
         docs.visit(docs.getParams().get(name), builder);
         builder.append("\n");
@@ -239,7 +241,7 @@ public class Emitter {
     }
 
     @Nullable
-    private String resolve(@Nullable ClassInfo context, Element element) {
+    private String resolveTermName(@Nullable ClassInfo context, Element element) {
         switch (element.getKind()) {
             case CLASS: {
                 ClassInfo type = types.get(MoreElements.asType(element));
@@ -256,6 +258,12 @@ public class Emitter {
             default:
                 return null;
         }
+    }
+
+    @Nullable
+    private String resolveTypeName(DeclaredType element) {
+        ClassInfo type = types.get(MoreTypes.asTypeElement(element));
+        return type == null ? null : type.name();
     }
 
     private long getPosition(Element element) {
