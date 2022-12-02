@@ -18,6 +18,7 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -25,10 +26,12 @@ import java.util.stream.Collectors;
 
 public class LuaDoclet implements Doclet {
     private String output = ".";
+    private Path root = Path.of(".");
     private Reporter reporter;
 
     private final Set<Option> options = Set.of(
         new BasicOption("-d", "Set the output directory", "FILE", o -> output = o),
+        new BasicOption("-project-root", "Set the directory that @source paths are generated relative to", "ROOT", o -> root = Path.of(o)),
         new BasicOption("-doctitle", "Title for the overview page", "TITLE"),
         new BasicOption("-windowtitle", "The title of the documentation", "TITLE")
     );
@@ -77,7 +80,7 @@ public class LuaDoclet implements Doclet {
             .collect(Collectors.toMap(ClassInfo::element, Function.identity()));
 
         try {
-            new Emitter(env, methods, types).emit(new File(output));
+            new Emitter(env, methods, types, root).emit(new File(output));
             return true;
         } catch (IOException e) {
             env.message(Diagnostic.Kind.ERROR, e.getMessage());

@@ -34,12 +34,13 @@ public class Emitter {
     private final Environment env;
     private final Map<TypeElement, ClassInfo> types;
     private final Map<ExecutableElement, MethodInfo> methods;
-    private final Path root = Paths.get(".").toAbsolutePath();
+    private final Path root;
 
-    public Emitter(Environment env, Map<ExecutableElement, MethodInfo> methods, Map<TypeElement, ClassInfo> types) {
+    public Emitter(Environment env, Map<ExecutableElement, MethodInfo> methods, Map<TypeElement, ClassInfo> types, Path root) {
         this.env = env;
         this.types = types;
         this.methods = methods;
+        this.root = root.toAbsolutePath();
 
         Map<Element, List<MethodInfo>> methodsGroups = new HashMap<>();
         for (MethodInfo method : methods.values()) {
