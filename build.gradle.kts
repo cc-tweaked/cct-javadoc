@@ -4,14 +4,14 @@ plugins {
 }
 
 group = "cc.tweaked"
-version = "1.5.3"
+version = "1.6.0"
 
 java {
     withJavadocJar()
     withSourcesJar()
 
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
@@ -19,7 +19,8 @@ repositories {
     mavenCentral()
     maven("https://squiddev.cc/maven") {
         content {
-            includeGroup("org.squiddev")
+            includeGroup("cc.tweaked")
+            includeModule("org.squiddev", "Cobalt")
         }
     }
 }
@@ -30,7 +31,7 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0")
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.9.0")
-    testImplementation("org.squiddev:cc-tweaked-1.16.5:1.98.2")
+    testImplementation("cc.tweaked:cc-tweaked-1.19.3-core:1.102.2")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.0")
 }
 

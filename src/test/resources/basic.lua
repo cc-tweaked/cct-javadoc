@@ -28,10 +28,14 @@ One more paragraph.
 print("Hello!")
 print("World")
 ```
+@usage Another example
+```lua {attribute=value}
+print("Test")
+```
 
 <code>&amp; &#42;</code>
 
-@source src/test/java/cc/tweaked/javadoc/files/BasicModule.java:41
+@source src/test/java/cc/tweaked/javadoc/files/BasicModule.java:45
 @tparam number x The first number to add
 @tparam number y The second number to add
 @treturn number The added values

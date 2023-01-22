@@ -35,6 +35,10 @@ public class BasicModule {
      * print("Hello!")
      * print("World")
      * }</pre>
+     * @cc.usage Another example
+     * <pre attribute="value">{@code
+     * print("Test")
+     * }</pre>
      *
      * <code>&amp; &#42;</code>
      */

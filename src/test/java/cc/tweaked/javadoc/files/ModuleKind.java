@@ -2,7 +2,6 @@ package cc.tweaked.javadoc.files;
 
 import dan200.computercraft.api.lua.GenericSource;
 import dan200.computercraft.api.lua.LuaFunction;
-import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nonnull;
 
@@ -18,8 +17,8 @@ public class ModuleKind {
 
         @Nonnull
         @Override
-        public ResourceLocation id() {
-            return new ResourceLocation();
+        public String id() {
+            return "test:foo";
         }
     }
 

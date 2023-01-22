@@ -248,7 +248,22 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
     public Void visitStartElement(StartElementTree node, StringBuilder stringBuilder) {
         if (node.getName().contentEquals("pre")) {
             inPre = true;
-            stringBuilder.append("```lua\n");
+            stringBuilder.append("```lua");
+            if (!node.getAttributes().isEmpty()) {
+                stringBuilder.append(" {");
+                boolean first = true;
+                for (var attribute : node.getAttributes()) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        stringBuilder.append(' ');
+                    }
+                    var attr = (AttributeTree) attribute;
+                    stringBuilder.append(attr.getName()).append('=').append(attr.getValue());
+                }
+                stringBuilder.append('}');
+            }
+            stringBuilder.append('\n');
         } else if (node.getName().contentEquals("p")) {
             // No-op
         } else if (node.getName().contentEquals("ul")) {

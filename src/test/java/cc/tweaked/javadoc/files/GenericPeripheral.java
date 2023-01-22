@@ -1,10 +1,9 @@
 package cc.tweaked.javadoc.files;
 
+import dan200.computercraft.api.lua.GenericSource;
 import dan200.computercraft.api.lua.ILuaContext;
 import dan200.computercraft.api.lua.LuaFunction;
 import dan200.computercraft.api.peripheral.IComputerAccess;
-import dan200.computercraft.api.lua.GenericSource;
-import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nonnull;
 
@@ -30,8 +29,8 @@ public class GenericPeripheral implements GenericSource {
 
     @Nonnull
     @Override
-    public ResourceLocation id() {
-        return new ResourceLocation();
+    public String id() {
+        return "test:generic";
     }
 
     public static class EnergyStorage {
