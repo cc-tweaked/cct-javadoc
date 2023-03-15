@@ -18,7 +18,6 @@ import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -57,14 +56,6 @@ public class Emitter {
                     .sorted(Comparator.comparing(x -> getPosition(x.method.element())))
                     .collect(Collectors.toList());
                 return new MethodCollection(klass, pair.getKey(), emitted);
-            })
-            .sorted((x, y) -> {
-                // Classes are sorted by depth in the type hierarchy.
-                Types tys = env.types();
-                if (tys.isAssignable(x.type, y.type)) return -1;
-                if (tys.isAssignable(y.type, x.type)) return 1;
-
-                return x.enclosing.getSimpleName().toString().compareTo(y.enclosing.getSimpleName().toString());
             })
             .collect(Collectors.toList());
 
@@ -105,23 +96,31 @@ public class Emitter {
         writeSource(builder, info.element());
 
         switch (info.sort()) {
-            case MODULE:
+            case MODULE -> {
                 appendModule(builder, info);
                 builder.append("\n]]\n");
-                break;
-            case TYPE:
+            }
+            case TYPE -> {
                 builder.append("@type ").append(info.typeName()).append("\n]]\n");
                 builder.append("local ").append(info.typeName()).append(" = {}\n");
-                break;
-            default:
-                throw new IllegalStateException("Unknown kind " + info.kind());
+            }
+            default -> throw new IllegalStateException("Unknown kind " + info.kind());
         }
 
         String prefix = info.typeName() == null ? "" : info.typeName() + ".";
-        for (MethodCollection collection : methodBuilders) {
-            if (collection.appearsIn(info)) collection.emit(prefix, builder);
-        }
+        methodBuilders.stream()
+            .filter(x -> x.appearsIn(info))
+            .sorted((x, y) -> {
+                // Prioritise the current element above everything else.
+                if (info.element() == x.enclosing) return -1;
+                if (info.element() == y.enclosing) return 1;
 
+                // Then just sort based on depth in the type hierarchy, with subclasses first.
+                return x.depth == y.depth
+                    ? x.enclosing.getSimpleName().toString().compareTo(y.enclosing.getSimpleName().toString())
+                    : -Integer.compare(x.depth, y.depth);
+            })
+            .forEach(c -> c.emit(prefix, builder));
         return builder.toString();
     }
 
@@ -320,6 +319,7 @@ public class Emitter {
         private final ClassInfo info;
         private final Element enclosing;
         private final TypeMirror type;
+        private final int depth;
         private final List<EmittedMethod> methods;
 
         private MethodCollection(ClassInfo info, Element enclosing, List<EmittedMethod> methods) {
@@ -327,6 +327,16 @@ public class Emitter {
             this.enclosing = enclosing;
             this.type = enclosing.asType();
             this.methods = methods;
+
+            int depth = 0;
+            Element self = enclosing;
+            while (true) {
+                TypeMirror parent = ((TypeElement) self).getSuperclass();
+                if (parent == null || parent.getKind() == TypeKind.NONE) break;
+                self = ((DeclaredType) parent).asElement();
+                depth++;
+            }
+            this.depth = depth;
         }
 
         boolean appearsIn(@Nonnull ClassInfo klass) {
