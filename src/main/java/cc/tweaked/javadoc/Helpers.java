@@ -44,6 +44,10 @@ public final class Helpers {
         return is(type, Optional.class) ? ((DeclaredType) type).getTypeArguments().get(0) : null;
     }
 
+    public static TypeMirror unwrapCoerced(TypeMirror type) {
+        return is(type, "dan200.computercraft.api.lua.Coerced") ? ((DeclaredType) type).getTypeArguments().get(0) : type;
+    }
+
 
     public static boolean is(TypeMirror type, Class<?> klass) {
         return type.getKind() == TypeKind.DECLARED && MoreTypes.isTypeOf(klass, type);
@@ -69,17 +73,17 @@ public final class Helpers {
     }
 
     public static boolean isKnown(TypeMirror type) {
-        TypeMirror t = unwrapOptional(type);
-        if (t == null) t = type;
+        type = Optional.ofNullable(unwrapOptional(type)).orElse(type);
+        type = unwrapCoerced(type);
 
-        switch (t.getKind()) {
+        switch (type.getKind()) {
             case DOUBLE:
             case INT:
             case LONG:
             case BOOLEAN:
                 return true;
             case DECLARED:
-                return is(t, String.class);
+                return is(type, String.class);
             default:
                 return false;
         }

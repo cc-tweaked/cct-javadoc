@@ -226,7 +226,7 @@ public class Emitter {
         if (optional != null) builder.append("[opt]");
         builder.append(" ");
 
-        new TypeConverter(env, element, this::resolveTypeName).visit(optional == null ? type : optional, builder);
+        new TypeConverter(env, element, this::resolveTypeName).visit(Helpers.unwrapCoerced(optional == null ? type : optional), builder);
         builder.append(" ").append(prettyName).append(" ");
         docs.visit(docs.getParams().get(name), builder);
         builder.append("\n");
