@@ -272,6 +272,12 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
             indents.push(indent);
             indent += "   ";
             stringBuilder.append(" - ");
+        } else if (node.getName().contentEquals("em") && node.getAttributes().isEmpty()) {
+            stringBuilder.append("*");
+        } else if (node.getName().contentEquals("strong") && node.getAttributes().isEmpty()) {
+            stringBuilder.append("**");
+        } else if (node.getName().contentEquals("code") && node.getAttributes().isEmpty()) {
+            stringBuilder.append("`");
         } else {
             stringBuilder.append("<").append(node.getName());
             visit(node.getAttributes(), stringBuilder);
@@ -308,6 +314,12 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
             // No-op
         } else if (node.getName().contentEquals("li")) {
             indent = indents.pop();
+        } else if (node.getName().contentEquals("em")) {
+            stringBuilder.append("*");
+        } else if (node.getName().contentEquals("strong")) {
+            stringBuilder.append("**");
+        } else if (node.getName().contentEquals("code")) {
+            stringBuilder.append("`");
         } else {
             stringBuilder.append("</").append(node.getName()).append(">");
         }
