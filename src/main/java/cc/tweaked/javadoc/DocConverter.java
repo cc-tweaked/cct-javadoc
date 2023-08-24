@@ -117,7 +117,7 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
             case "nil":
             case "true":
             case "false":
-                stringBuilder.append("@{").append(body).append("}");
+                stringBuilder.append("[`").append(body).append("`]");
                 return null;
             default:
                 if (node.getKind() == DocTree.Kind.CODE) {
@@ -131,13 +131,14 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
 
     @Override
     public Void visitLink(LinkTree node, StringBuilder stringBuilder) {
-        stringBuilder.append("@{");
-        visit(node.getReference(), stringBuilder);
         if (!node.getLabel().isEmpty()) {
-            stringBuilder.append("|");
+            stringBuilder.append("[");
             visit(node.getLabel(), stringBuilder);
+            stringBuilder.append("]");
         }
-        stringBuilder.append("}");
+        stringBuilder.append("[`");
+        visit(node.getReference(), stringBuilder);
+        stringBuilder.append("`]");
         return null;
     }
 
@@ -276,8 +277,6 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
             stringBuilder.append("*");
         } else if (node.getName().contentEquals("strong") && node.getAttributes().isEmpty()) {
             stringBuilder.append("**");
-        } else if (node.getName().contentEquals("code") && node.getAttributes().isEmpty()) {
-            stringBuilder.append("`");
         } else {
             stringBuilder.append("<").append(node.getName());
             visit(node.getAttributes(), stringBuilder);
@@ -318,8 +317,6 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
             stringBuilder.append("*");
         } else if (node.getName().contentEquals("strong")) {
             stringBuilder.append("**");
-        } else if (node.getName().contentEquals("code")) {
-            stringBuilder.append("`");
         } else {
             stringBuilder.append("</").append(node.getName()).append(">");
         }

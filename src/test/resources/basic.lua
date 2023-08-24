@@ -23,6 +23,8 @@ One more paragraph.
 
 <customTag attribute="value"></customTag>
 <custom-tag attribute="value"></custom-tag>
+
+[`add`] and [add two numbers][`add`] are the same method.
 @usage Do something simple.
 ```lua
 print("Hello!")
@@ -35,7 +37,7 @@ print("Test")
 
 <code>&amp; &#42;</code>
 
-@source src/test/java/cc/tweaked/javadoc/files/BasicModule.java:45
+@source src/test/java/cc/tweaked/javadoc/files/BasicModule.java:47
 @tparam number x The first number to add
 @tparam number y The second number to add
 @treturn number The added values

@@ -27,6 +27,8 @@ public class BasicModule {
      * <customTag attribute="value"></customTag>
      * <custom-tag attribute="value"></custom-tag>
      *
+     * {@link #add} and {@link #add add two numbers} are the same method.
+     *
      * @param x The first number to add
      * @param y The second number to add
      * @return The added values
