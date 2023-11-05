@@ -14,6 +14,12 @@ import com.sun.source.util.SimpleDocTreeVisitor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 import java.util.*;
 import java.util.function.Function;
@@ -328,6 +334,47 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
         stringBuilder.append("&").append(node.getName()).append(";");
         return null;
     }
+
+    @Override
+    public Void visitInheritDoc(InheritDocTree node, StringBuilder out) {
+        DocCommentTree tree = null;
+        if (owner instanceof ExecutableElement currentMethod) {
+            Queue<TypeElement> types = new ArrayDeque<>();
+            TypeElement currentType = (TypeElement) currentMethod.getEnclosingElement();
+            addSupers(types, currentType);
+
+            TypeElement superType;
+            top:
+            while ((superType = types.poll()) != null) {
+                for (ExecutableElement superMethod : ElementFilter.methodsIn(superType.getEnclosedElements())) {
+                    if (environment.elements().overrides(currentMethod, superMethod, currentType)) {
+                        tree = environment.trees().getDocCommentTree(superMethod);
+                        if (tree != null) break top;
+                    }
+                }
+
+                addSupers(types, superType);
+            }
+        }
+
+        if (tree == null) {
+            report(node, "Cannot resolve parent doc comment.");
+            return null;
+        } else {
+            return visit(tree, out);
+        }
+    }
+
+    private static void addSupers(Queue<TypeElement> queue, TypeElement element) {
+        if (element.getSuperclass().getKind() == TypeKind.DECLARED) {
+            queue.add((TypeElement) ((DeclaredType) element.getSuperclass()).asElement());
+        }
+
+        for (TypeMirror iface : element.getInterfaces()) {
+            if (iface.getKind() == TypeKind.DECLARED) queue.add((TypeElement) ((DeclaredType) iface).asElement());
+        }
+    }
+
 
     @Override
     protected Void defaultAction(DocTree node, StringBuilder stringBuilder) {

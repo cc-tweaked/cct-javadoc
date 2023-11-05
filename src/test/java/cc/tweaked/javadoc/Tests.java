@@ -22,6 +22,7 @@ public class Tests {
         "generic_peripheral",
         "types.One",
         "types.Two",
+        "types.Adder",
         "foo",
         "bar.Type",
     })
