@@ -17,10 +17,9 @@ java {
 
 repositories {
     mavenCentral()
-    maven("https://squiddev.cc/maven") {
+    maven("https://maven.squiddev.cc") {
         content {
             includeGroup("cc.tweaked")
-            includeModule("org.squiddev", "Cobalt")
         }
     }
 }
@@ -31,7 +30,7 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0")
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.9.0")
-    testImplementation("cc.tweaked:cc-tweaked-1.19.3-core:1.102.2")
+    testImplementation("cc.tweaked:cc-tweaked-1.20.1-core:1.113.1")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.0")
 }
 
@@ -47,7 +46,7 @@ publishing {
     }
 
     repositories {
-        maven("https://squiddev.cc/maven") {
+        maven("https://maven.squiddev.cc") {
             name = "SquidDev"
             credentials(PasswordCredentials::class)
         }
