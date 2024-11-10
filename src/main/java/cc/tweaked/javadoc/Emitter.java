@@ -138,13 +138,9 @@ public class Emitter {
         ExecutableElement method = info.element();
 
         boolean isStatic = method.getModifiers().contains(Modifier.STATIC);
-        if (klass != null) {
-            boolean isGeneric = klass.sort() == ClassInfo.Sort.MODULE && klass.kind().equals(ClassInfo.GENERIC_PERIPHERAL);
-            if (isStatic && !isGeneric) {
-                env.message(Diagnostic.Kind.ERROR, "Cannot have static methods on non-generic sources", method);
-            } else if (isGeneric && !isStatic) {
-                env.message(Diagnostic.Kind.ERROR, "Cannot have instance methods on generic sources", method);
-            }
+        boolean isGeneric = klass != null && klass.sort() == ClassInfo.Sort.MODULE && klass.kind().equals(ClassInfo.GENERIC_PERIPHERAL);
+        if (isStatic && !isGeneric) {
+            env.message(Diagnostic.Kind.ERROR, "Cannot have static methods on non-generic sources", method);
         }
 
         DocConverter doc = new DocConverter(env, method, x -> resolveTermName(klass, x));
@@ -159,7 +155,7 @@ public class Emitter {
         String signature;
         if (!doc.hasParam()) {
             List<? extends VariableElement> arguments = method.getParameters();
-            if (isStatic) arguments = arguments.subList(1, arguments.size());
+            if (isGeneric) arguments = arguments.subList(1, arguments.size());
 
             List<String> parameters = new ArrayList<>();
             for (VariableElement element : arguments) {
