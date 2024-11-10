@@ -22,13 +22,12 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 import java.util.*;
-import java.util.function.Function;
 
 public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
     private final Element owner;
     private final Environment environment;
     private final DocTreePath path;
-    private final Function<Element, String> resolve;
+    private final Resolver resolve;
 
     private boolean inPre;
     private final Deque<String> indents = new ArrayDeque<>();
@@ -40,7 +39,7 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
     private boolean hasReturn = false;
     private List<? extends DocTree> returns;
 
-    public DocConverter(Environment environment, Element owner, Function<Element, String> resolve) {
+    public DocConverter(Environment environment, Element owner, Resolver resolve) {
         this.owner = owner;
         this.environment = environment;
 
@@ -157,7 +156,7 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
             return null;
         }
 
-        String alternative = resolve.apply(referred);
+        String alternative = resolve.resolve(referred, !node.getSignature().startsWith("#"));
         if (alternative == null) {
             environment.message(Diagnostic.Kind.ERROR, "Cannot convert " + referred + " into a Lua reference.", owner, node);
             stringBuilder.append(node.getSignature());
@@ -392,5 +391,17 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
 
     public void message(@Nonnull Diagnostic.Kind kind, @Nonnull String message, @Nonnull Element element) {
         if (path != null) environment.message(kind, message, element);
+    }
+
+    public interface Resolver {
+        /**
+         * Resove a reference to an element.
+         *
+         * @param element   The element to resolve.
+         * @param qualified Whether this term was referenced unqualified ({@code #foo}) or qualified ({@code Foo#foo()}).
+         * @return The Lua reference, or {@code null} if it could not be resolved.
+         */
+        @Nullable
+        String resolve(Element element, boolean qualified);
     }
 }

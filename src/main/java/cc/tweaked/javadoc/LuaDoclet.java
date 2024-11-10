@@ -11,7 +11,6 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
 
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -72,9 +71,8 @@ public class LuaDoclet implements Doclet {
                 throw new IllegalStateException("Cannot merge terms");
             }, LinkedHashMap::new));
 
-        Map<TypeElement, ClassInfo> types = methods.keySet().stream()
-            .map(Element::getEnclosingElement)
-            .filter(TypeElement.class::isInstance).map(TypeElement.class::cast)
+        Map<TypeElement, ClassInfo> types = docEnv.getSpecifiedElements().stream()
+            .filter(x -> x.getKind() == ElementKind.CLASS).map(TypeElement.class::cast)
             .distinct()
             .flatMap(x -> ClassInfo.of(env, x).stream())
             .collect(Collectors.toMap(ClassInfo::element, Function.identity()));

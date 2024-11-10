@@ -91,7 +91,7 @@ public class Emitter {
         }
 
         builder.append("--[[- ");
-        new DocConverter(env, info.element(), x -> resolveTermName(info, x)).visit(info.doc(), builder);
+        new DocConverter(env, info.element(), (x, q) -> resolveTermName(info, x, q)).visit(info.doc(), builder);
 
         writeSource(builder, info.element());
 
@@ -143,7 +143,7 @@ public class Emitter {
             env.message(Diagnostic.Kind.ERROR, "Cannot have static methods on non-generic sources", method);
         }
 
-        DocConverter doc = new DocConverter(env, method, x -> resolveTermName(klass, x));
+        DocConverter doc = new DocConverter(env, method, (x, q) -> resolveTermName(klass, x, q));
         TypeConverter type = new TypeConverter(env, method, this::resolveTypeName);
 
         StringBuilder builder = new StringBuilder();
@@ -243,7 +243,7 @@ public class Emitter {
     }
 
     @Nullable
-    private String resolveTermName(@Nullable ClassInfo context, Element element) {
+    private String resolveTermName(@Nullable ClassInfo context, Element element, boolean qualified) {
         switch (element.getKind()) {
             case CLASS: {
                 ClassInfo type = types.get(MoreElements.asType(element));
@@ -252,7 +252,11 @@ public class Emitter {
 
             case METHOD: {
                 MethodInfo method = methods.get(MoreElements.asExecutable(element));
-                ClassInfo builder = resolveType(method.element().getEnclosingElement());
+
+                // If this is an unqualified reference, then emit an unqualified reference.
+                if (!qualified) return method.name();
+
+                var builder = resolveType(method.element().getEnclosingElement());
                 if (builder == null) return null;
                 return builder == context ? method.name() : builder.referenceName() + "." + method.name();
             }
