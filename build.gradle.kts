@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "cc.tweaked"
-version = "1.8.3"
+version = "1.8.4"
 
 java {
     withJavadocJar()

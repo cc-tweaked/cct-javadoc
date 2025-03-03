@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Emitter {
     private final Map<ClassInfo, String> typeBuilders = new HashMap<>();
@@ -185,7 +186,7 @@ public class Emitter {
         if (!doc.hasReturn() && method.getReturnType().getKind() != TypeKind.VOID) {
             builder.append("@treturn ");
             type.visit(method.getReturnType(), builder);
-            if (method.getAnnotation(Nullable.class) != null) builder.append("|nil");
+            if (isNullable(method)) builder.append("|nil");
             builder.append(" ");
             doc.visit(doc.getReturns(), builder);
             builder.append("\n");
@@ -194,6 +195,13 @@ public class Emitter {
         builder.append("]]\n");
 
         return new EmittedMethod(info, builder.toString(), signature);
+    }
+
+    private static boolean isNullable(ExecutableElement method) {
+        return Stream.concat(
+            method.getAnnotationMirrors().stream(),
+            method.getReturnType().getAnnotationMirrors().stream()
+        ).anyMatch(x -> x.getAnnotationType().asElement().getSimpleName().contentEquals("Nullable"));
     }
 
     @Nullable
