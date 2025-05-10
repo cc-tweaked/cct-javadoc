@@ -36,8 +36,9 @@ print("Test")
 ```
 
 <code>&amp; &#42;</code>
+@since 1.2.3
 
-@source src/test/java/cc/tweaked/javadoc/files/BasicModule.java:47
+@source src/test/java/cc/tweaked/javadoc/files/BasicModule.java:48
 @tparam number x The first number to add
 @tparam number y The second number to add
 @treturn number The added values

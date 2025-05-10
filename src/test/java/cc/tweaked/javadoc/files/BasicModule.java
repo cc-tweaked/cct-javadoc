@@ -43,6 +43,7 @@ public class BasicModule {
      * }</pre>
      *
      * <code>&amp; &#42;</code>
+     * @since 1.2.3
      */
     @LuaFunction
     public int add(int x, int y) {

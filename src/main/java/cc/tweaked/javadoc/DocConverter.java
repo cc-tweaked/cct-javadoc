@@ -97,7 +97,7 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
 
                 if (i > 0) {
                     builder.append("\n");
-                    if (line.length() > 0) builder.append(indent);
+                    if (!line.isEmpty()) builder.append(indent);
                 }
 
                 builder.append(line);
@@ -170,6 +170,14 @@ public class DocConverter extends SimpleDocTreeVisitor<Void, StringBuilder> {
     @Override
     public Void visitHidden(HiddenTree node, StringBuilder stringBuilder) {
         stringBuilder.append("@local\n");
+        return null;
+    }
+
+    @Override
+    public Void visitSince(SinceTree node, StringBuilder stringBuilder) {
+        stringBuilder.append("@since ");
+        visit(node.getBody(), stringBuilder);
+        stringBuilder.append("\n");
         return null;
     }
 
